@@ -1,0 +1,25 @@
+{
+  "name": "js-explorer",
+  "version": "0.0.0",
+  "homepage": "https://github.com/izissise/js-explorer",
+  "authors": [
+    "Hugues Morisset <morisset.hugues@gmail.com>"
+  ],
+  "description": "A file explorer in javascript",
+  "main": "file.js",
+  "keywords": [
+    "file"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "Json-to-HTML-Table": "https://github.com/afshinm/Json-to-HTML-Table",
+    "tablesort": "https://github.com/tristen/tablesort"
+  }
+}
