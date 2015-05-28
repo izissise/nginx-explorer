@@ -18,5 +18,6 @@ Nginx configuration should look like this:
       }
   }
 
-You need bower:
+You need npm, bower and gulp:
 npm install -g bower
+npm install -g gulp
