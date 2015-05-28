@@ -3,41 +3,43 @@ var gulp = require('gulp');
 var uglify = require('gulp-uglify');
 var jshint = require('gulp-jshint');
 var concat = require('gulp-concat');
-// Include plugins
-var plugins = require("gulp-load-plugins")({
-	pattern: ['gulp-*', 'gulp.*'],
-	replaceString: /\bgulp[\-.]/
-});
+var filter = require('gulp-filter');
+var rename = require('gulp-rename');
+var minifyHtml = require('gulp-minify-html');
+var minifyCss = require('gulp-minify-css');
+var order = require('gulp-order');
+
 // Define default destination folder
 var dest = 'www/';
 
 gulp.task('js', function() {
-	var jsFiles = ['src/js/*'];
-	gulp.src(plugins.concat(jsFiles))
-		.pipe(plugins.filter('*.js'))
-		.pipe(plugins.concat('main.js'))
-		.pipe(plugins.uglify())
+	var jsFiles = 'src/js/*';
+	gulp.src(jsFiles)
+		.pipe(filter('*.js'))
+		.pipe(concat('main.js'))
+		.pipe(uglify())
+    .pipe(rename('main.min.js'))
 		.pipe(gulp.dest(dest));
 });
 
 gulp.task('css', function() {
-	var cssFiles = ['src/css/*'];
-	gulp.src(plugins.mainBowerFiles().concat(cssFiles))
-		.pipe(plugins.filter('*.css'))
-		.pipe(plugins.order([
+	var cssFiles = 'src/css/*';
+	gulp.src(cssFiles)
+		.pipe(filter('*.css'))
+		.pipe(order([
 			'*'
 		]))
-		.pipe(plugins.concat('main.css'))
-		.pipe(plugins.uglify())
+		.pipe(concat('main.css'))
+		.pipe(minifyCss())
 		.pipe(gulp.dest(dest));
 });
 
 gulp.task('html', function() {
   var htmlFiles = ['src/html/*'];
-  for (var src in htmlFiles) {
-    gulp.src(src)
+    gulp.src(htmlFiles)
+    .pipe(filter('*.html'))
+    .pipe(minifyHtml())
     .pipe(gulp.dest(dest));
-  }
 });
 
 gulp.task('lint', function() {

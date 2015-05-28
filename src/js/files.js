@@ -7,5 +7,5 @@ window.onload = function() {
       config.innerHTML = dataTable;
       new Tablesort(document.getElementById("dataTable"));
     },
-    function(err) { console.error(err); })
-}
+    function(err) { console.error(err); });
+};
