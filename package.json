@@ -1,0 +1,45 @@
+{
+  "name": "js-explorer",
+  "version": "0.0.1",
+  "homepage": "https://github.com/izissise/js-explorer",
+  "author": "Hugues Morisset <morisset.hugues@gmail.com>",
+  "contributors": [
+    ""
+  ],
+  "description": "A file explorer in javascript",
+  "main": "file.js",
+  "keywords": [
+    "file"
+  ],
+  "scripts": {
+    "build": "./node_modules/gulp/bin/gulp.js build",
+    "watch": "./node_modules/gulp/bin/gulp.js watch",
+    "lint": "./node_modules/gulp/bin/gulp.js lint"
+  },
+  "dependencies": {
+    "tablesort": "git://github.com/tristen/tablesort#gh-pages"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.11",
+    "gulp-concat": "^2.5.2",
+    "gulp-jshint": "^1.11.0",
+    "gulp-load-plugins": "^0.10.0",
+    "gulp-notify": "^2.2.0",
+    "gulp-uglify": "^1.2.0"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/izissise/js-explorer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/izissise/js-explorer/issues"
+  }
+}

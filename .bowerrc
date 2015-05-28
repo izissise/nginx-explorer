@@ -1,6 +1,0 @@
-{
-    "scripts": {
-        "preinstall": "npm install --save-dev gulp gulp-load-plugins",
-        "postinstall": "gulp"
-    }
-}

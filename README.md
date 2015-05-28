@@ -1,8 +1,7 @@
 # js-explorer
 File explorer in javascript, file come from nginx autoindex
 
-Nginx configuration should look like this:
-  server {
+Nginx configuration should look
       server_name  host;
 
       location / {
@@ -18,6 +17,4 @@ Nginx configuration should look like this:
       }
   }
 
-You need npm, bower and gulp:
-npm install -g bower
-npm install -g gulp
+You need npm, run:
