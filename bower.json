@@ -21,5 +21,8 @@
   "dependencies": {
     "Json-to-HTML-Table": "https://github.com/afshinm/Json-to-HTML-Table",
     "tablesort": "https://github.com/tristen/tablesort"
+  },
+  "devDependencies": {
+    "gulp": "~3.8.11"
   }
 }
