@@ -16,11 +16,10 @@
     "watch": "./node_modules/gulp/bin/gulp.js watch",
     "lint": "./node_modules/gulp/bin/gulp.js lint"
   },
-  "dependencies": {
-    "tablesort": "git://github.com/tristen/tablesort#gh-pages"
-  },
   "devDependencies": {
     "gulp": "^3.8.11",
+    "gulp-bower": "0.0.10",
+    "gulp-chmod": "^1.2.0",
     "gulp-concat": "^2.5.2",
     "gulp-filter": "^2.0.2",
     "gulp-jshint": "^1.11.0",
@@ -29,7 +28,8 @@
     "gulp-notify": "^2.2.0",
     "gulp-order": "^1.1.1",
     "gulp-rename": "^1.2.2",
-    "gulp-uglify": "^1.2.0"
+    "gulp-uglify": "^1.2.0",
+    "main-bower-files": "^2.8.0"
   },
   "ignore": [
     "**/.*",

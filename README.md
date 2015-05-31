@@ -17,4 +17,11 @@ Nginx configuration should look
       }
   }
 
-You need npm, run:
+You need npm and bower, run:
+npm install -g bower
+
+Install build deps:
+npm install
+
+Build:
+gulp

@@ -8,37 +8,45 @@ var rename = require('gulp-rename');
 var minifyHtml = require('gulp-minify-html');
 var minifyCss = require('gulp-minify-css');
 var order = require('gulp-order');
+var chmod = require('gulp-chmod');
+var bower = require('gulp-bower');
+var mainBowerFiles = require('main-bower-files');
 
 // Define default destination folder
 var dest = 'www/';
 
-gulp.task('js', function() {
-	var jsFiles = 'src/js/*';
-	gulp.src(jsFiles)
+gulp.task('js', ['bower-install'], function() {
+	var jsFiles = ['src/js/*'];
+  var bowerFile = mainBowerFiles();
+	gulp.src(bowerFile.concat(jsFiles))
 		.pipe(filter('*.js'))
 		.pipe(concat('main.js'))
 		.pipe(uglify())
     .pipe(rename('main.min.js'))
+    .pipe(chmod(644))
 		.pipe(gulp.dest(dest));
 });
 
-gulp.task('css', function() {
-	var cssFiles = 'src/css/*';
-	gulp.src(cssFiles)
+gulp.task('css', ['bower-install'], function() {
+	var cssFiles = ['src/css/*'];
+  var bowerFile = mainBowerFiles();
+	gulp.src(bowerFile.concat(cssFiles))
 		.pipe(filter('*.css'))
 		.pipe(order([
 			'*'
 		]))
 		.pipe(concat('main.css'))
 		.pipe(minifyCss())
+    .pipe(chmod(644))
 		.pipe(gulp.dest(dest));
 });
 
-gulp.task('html', function() {
+gulp.task('html', ['bower-install'], function() {
   var htmlFiles = ['src/html/*'];
     gulp.src(htmlFiles)
     .pipe(filter('*.html'))
     .pipe(minifyHtml())
+    .pipe(chmod(644))
     .pipe(gulp.dest(dest));
 });
 
@@ -48,7 +56,11 @@ gulp.task('lint', function() {
         .pipe(jshint.reporter('default'));
 });
 
-gulp.task('build', ['js', 'css', 'html']);
+gulp.task('build', ['bower-install', 'js', 'css', 'html']);
+
+gulp.task('bower-install', function(){
+    return bower();
+});
 
 // Watch Files For Changes
 gulp.task('watch', function() {
