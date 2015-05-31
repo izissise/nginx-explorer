@@ -15,7 +15,7 @@
     "tests"
   ],
   "dependencies": {
-    "Json-to-HTML-Table": "git://github.com/pammacdotnet/Json-to-HTML-Table",
+    "Json-to-HTML-Table": "git://github.com/izissise/Json-to-HTML-Table",
     "tablesort": "git://github.com/tristen/tablesort#~3.0.2"
   }
 }
