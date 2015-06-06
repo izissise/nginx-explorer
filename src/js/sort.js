@@ -5,7 +5,10 @@
     date = date.replace(/\-/g, '/');
     date = date.replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})/, '$1/$2/$3'); // format before getTime
 
-    return new Date(date).getTime() || -1;
+    var tmp = date.split(' ');
+    var hours = tmp[1].split(':');
+    var parts = tmp[0].split('/');
+    return new Date(parts[2], parts[1]-1, parts[0], hours[0], hours[1], hours[2]).getTime() || -1;
   };
 
   Tablesort.extend('date', function(item) {
@@ -18,7 +21,7 @@
     a = a.toLowerCase();
     b = b.toLowerCase();
 
-    return parseDate(b) - parseDate(a);
+    return parseDate(a) - parseDate(b);
   });
 }());
 
@@ -58,6 +61,8 @@
     var base = suffix[1] === 'i' ? 1024 : 1000;
 
     switch(suffix[0]) {
+      case 'b':
+        return Math.pow(base, 1);
       case 'k':
         return Math.pow(base, 2);
       case 'm':
@@ -82,6 +87,8 @@
   Tablesort.extend('filesize', function(item) {
     return /^\d+(\.\d+)? ?(K|M|G|T|P|E|Z|Y|B$)i?B?$/i.test(item);
   }, function(a, b) {
+    a = a == '' ? '0 B' : a;
+    b = b == '' ? '0 B' : b;
     a = filesize2num(a);
     b = filesize2num(b);
 
