@@ -6,11 +6,14 @@ window.onload = function() {
 function fileApp(api, div) {
   loadJSON(api,
     function(data) {
-      formatData(api, data);
 
-      var dataTable = ConvertJsonToTable(data, 'dataTable', null, null);
+      formatData(api, data);
+      var dataTable = ConvertJsonToTable(data, null, null, null);
+
       div.innerHTML = dataTable;
-      new Tablesort(document.getElementById("dataTable"));
+      var headers = div.getElementsByTagName('th');
+      addSortInfo(headers);
+      var sortedTable = new Tablesort(div.getElementsByTagName('table')[0]);
     },
     function(err) { console.error(err); });
 }
@@ -20,12 +23,19 @@ Number.prototype.padLeft = function(base,chr){
     return len > 0 ? new Array(len).join(chr || '0') + this : this;
 };
 
+function addSortInfo(div) {
+  div[0].setAttribute('data-sort-method', 'default');
+  div[1].setAttribute('data-sort-method', 'filesize');
+  div[2].setAttribute('data-sort-method', 'date');
+  div[2].className += 'sort-default';
+}
+
 function formatData(baseUrl, data) {
   //Transform as a link or directory
   data.forEach(function(e) {
    var name = "";
    if (e.type == "directory") {
-     name = '<a href="#" onclick=\'fileApp("' + baseUrl + e.name + '/", this)\'>' + e.name + '</a>';
+     name = directoryfy(baseUrl, e.name);
    } else {
      name = linkify(baseUrl, e.name);
    }
@@ -51,6 +61,10 @@ function formatData(baseUrl, data) {
    delete e.mtime;
   });
 
+}
+
+function directoryfy(base, data) {
+  return '<a href="javascript:void(0)" onclick=\'fileApp("' + base + data + '/", this)\'>' + data + '</a>';
 }
 
 function linkify(base, data) {
