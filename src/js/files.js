@@ -1,16 +1,29 @@
 window.onload = function() {
   var config = document.getElementById("filesapp");
-  fileApp(config.dataset.api, config);
+  fileApp(config.dataset.api, config, false);
 };
 
-function fileApp(api, div) {
+function createDropDown(that) {
+  var par = that.parentNode;
+  return par;
+}
+
+function fileApp(api, div, location) {
   loadJSON(api,
     function(data) {
 
       formatData(api, data);
       var dataTable = ConvertJsonToTable(data, null, null, null);
 
-      div.innerHTML = dataTable;
+      var posSlash = api.lastIndexOf('/', api.length - 2);
+      var posLastSlash = api.lastIndexOf('/');
+      var textLocation = api.substring(posSlash + 1, posLastSlash);
+
+      div.innerHTML = '';
+      if (location) {
+      div.innerHTML = '<h3 style="center;">' + textLocation + '</h3>';
+      }
+      div.innerHTML += dataTable;
       var headers = div.getElementsByTagName('th');
       addSortInfo(headers);
       var sortedTable = new Tablesort(div.getElementsByTagName('table')[0]);
@@ -64,7 +77,7 @@ function formatData(baseUrl, data) {
 }
 
 function directoryfy(base, data) {
-  return '<a href="javascript:void(0)" onclick=\'fileApp("' + base + data + '/", this)\'>' + data + '</a>';
+  return '<a href="javascript:void(0)" onclick=\'fileApp("' + base + data + '/", createDropDown(this), true)\'>' + data + '</a>';
 }
 
 function linkify(base, data) {
