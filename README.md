@@ -9,8 +9,8 @@ Nginx configuration should look
          index index.html index.htm;
       }
 
-      location /downloads {
-          root /; // /downloads is where the files are.
+      location /downloads { // downloads is where the files are.
+          alias /downloads;
           autoindex on;
           autoindex_format json;
           autoindex_exact_size off;
