@@ -2,6 +2,9 @@
 File explorer in javascript, file come from nginx autoindex
 
 Nginx configuration should look
+
+  server {
+      listen 80;
       server_name  host;
 
       location / {
