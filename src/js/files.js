@@ -59,7 +59,7 @@ function formatData(baseUrl, data) {
               [d.getHours().padLeft(),
                d.getMinutes().padLeft(),
                d.getSeconds().padLeft()].join(':');
-   var size = "";
+   var size = "-";
    if (e.size) {
       size = humanFileSize(e.size, false);
    }
@@ -77,11 +77,11 @@ function formatData(baseUrl, data) {
 }
 
 function directoryfy(base, data) {
-  return '<a href="javascript:void(0)" onclick=\'fileApp("' + base + data + '/", createDropDown(this), true)\'>' + data + '</a>';
+  return '<a href="javascript:void(0)" onclick=\'fileApp("' + base + data + '/", createDropDown(this), true)\'>' + iconFor(data, true) + data + '</a>';
 }
 
 function linkify(base, data) {
-   return '<a href="' + base + data + '">' + data + '</a>';
+   return '<a href="' + base + data + '">' + iconFor(data, false) + data + '</a>';
 }
 
 function humanFileSize(bytes, si) {
