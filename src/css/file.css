@@ -1,0 +1,56 @@
+table { color: black; background-color: rgba(255, 255, 255, 0.9); }
+
+tbody tr:nth-child(odd) {
+  background-color: rgba(246, 246, 246, 0.9);
+}
+
+#indexof {
+    text-align: center;
+}
+
+.fileicon {
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.filelink {
+  display: block;
+  padding: 8px;
+}
+
+.posabsolute { position: absolute; }
+
+a, a:visited {
+  color: #2281d0;
+}
+
+#footer {
+  text-align: center;
+  font-size: small;
+  padding-bottom: 2em;
+}
+
+#footer a, .posabsolute a {
+  color: white;
+  text-decoration: underline;
+}
+
+a {
+  text-decoration: none;
+}
+
+tr th:nth-child(2), tr th:nth-child(3) {
+  width: 20%;
+  text-align: center;
+}
+
+tr td:nth-child(2), tr td:nth-child(3) {
+  text-align: center;
+}
+
+
+@media handheld {
+  body {
+    color: red;
+  }
+} 

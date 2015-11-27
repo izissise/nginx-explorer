@@ -1,0 +1,26 @@
+/*-----------------------------------
+  Markup free clearing
+  Details: http: //perishablepress.com/press/2009/12/06/new-clearfix-hack
+-------------------------------------*/
+.clearfix:after {
+  content: '.';
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+  }
+
+* html .clearfix { height: 1%; } /* IE6 */
+*:first-child + html .clearfix { min-height: 1%; } /* IE7 */
+
+
+.background {
+  background: repeating-linear-gradient(
+    -45deg,
+    #f6ba52,
+    #f6ba52 20px,
+    #ffd180 20px,
+    #ffd180 30px
+  );
+}
+
