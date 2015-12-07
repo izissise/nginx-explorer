@@ -1,30 +1,18 @@
 # js-explorer
-File explorer in javascript, file come from nginx autoindex
+File explorer in javascript, web based
 
-Nginx configuration should look
+files listing come from nginx autoindex
 
-  server {
-      listen 80;
-      server_name  host;
+![example](https://raw.github.com/izissise/js-explorer/master/art/example.png "Example")
 
-      location / {
-         root /var/www/files/; //where you put the app.
-         index index.html index.htm;
-      }
+You need nodejs:
 
-      location /downloads { // downloads is where the files are.
-          alias /downloads;
-          autoindex on;
-          autoindex_format json;
-          autoindex_exact_size off;
-      }
-  }
-
-You need npm and bower, run:
+```
 npm install -g bower
+npm run build
+```
 
-Install build deps:
-npm install
+And the result file to be served with nginx will be in:
+/www
 
-Build:
-gulp
+Look at nginx.conf for an example
