@@ -1,6 +1,20 @@
+function escapeHtml(text) {
+  var map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+var config;
+
 window.onload = function() {
-  var config = document.getElementById("filesapp");
-  fileApp(config.dataset.api, config, false);
+  config = document.getElementById("filesapp");
+  fileApp(config.dataset.api, config);
 };
 
 function createDropDown(that) {
@@ -8,31 +22,33 @@ function createDropDown(that) {
   return par;
 }
 
-function fileApp(api, div, location) {
+function fileApp(api, div) {
   loadJSON(api,
     function(data) {
 
       formatData(api, data);
       var dataTable = ConvertJsonToTable(data, null, null, null);
 
-      var posSlash = api.lastIndexOf('/', api.length - 2);
-      var posLastSlash = api.lastIndexOf('/');
-      var textLocation = api.substring(posSlash + 1, posLastSlash);
-
       div.innerHTML = '';
-      if (location) {
-      div.innerHTML = '<h3 style="center;">' + textLocation + '</h3>';
+      if (api != config.dataset.api) {
+        var posSlash = api.lastIndexOf('/', api.length - 2);
+        var posLastSlash = api.lastIndexOf('/');
+        var textLocation = api.substring(posSlash + 1, posLastSlash);
+
+        div.innerHTML = ['<h3 style="center;">', escapeHtml(textLocation), '</h3>'].join("");
       }
       div.innerHTML += dataTable;
       var headers = div.getElementsByTagName('th');
-      addSortInfo(headers);
-      var sortedTable = new Tablesort(div.getElementsByTagName('table')[0]);
+      if (headers.length > 0) {
+        addSortInfo(headers);
+        var sortedTable = new Tablesort(div.getElementsByTagName('table')[0]);
+      }
     },
     function(err) { console.error(err); });
 }
 
-Number.prototype.padLeft = function(base,chr){
-    var  len = (String(base || 10).length - String(this).length)+1;
+Number.prototype.padLeft = function(base, chr){
+    var  len = (String(base || 10).length - String(this).length) + 1;
     return len > 0 ? new Array(len).join(chr || '0') + this : this;
 };
 
@@ -77,11 +93,16 @@ function formatData(baseUrl, data) {
 }
 
 function directoryfy(base, data) {
-  return '<a href="javascript:void(0)" onclick=\'fileApp("' + base + data + '/", createDropDown(this), true)\'>' + iconFor(data, true) + data + '</a>';
+  return ['<a href="javascript:void(0)" onclick=\'fileApp("',
+          escapeHtml(base), escapeHtml(data), '/", createDropDown(this))\'>',
+          iconFor(data, true), data, '</a>'
+  ].join("");
 }
 
 function linkify(base, data) {
-   return '<a href="' + base + data + '">' + iconFor(data, false) + data + '</a>';
+  return ['<a href="', escapeHtml(base), escapeHtml(data), '">',
+         iconFor(data, false), data, '</a>'
+  ].join("");
 }
 
 function humanFileSize(bytes, si) {
