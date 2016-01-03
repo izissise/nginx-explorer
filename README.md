@@ -1,18 +1,24 @@
-# js-explorer
+# nginx-explorer
 File explorer in javascript, web based
+using nginx for directory listing
 
-files listing come from nginx autoindex
+![example](https://raw.github.com/izissise/nginx-explorer/master/art/example.png "Example")
 
-![example](https://raw.github.com/izissise/js-explorer/master/art/example.png "Example")
+Building/Using:
+```
+git clone https://github.com/izissise/nginx-explorer.git
+cd nginx-explorer
+```
 
 You need nodejs:
-
 ```
 npm install -g bower
+npm install
 npm run build
 ```
 
-And the result file to be served with nginx will be in:
-/www
-
-Look at nginx.conf for an example
+Quick launch with docker:
+```
+docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v $(pwd)/www:/var/www/files -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf nginx
+```
+Go to 127.0.0.1 with you browser.
