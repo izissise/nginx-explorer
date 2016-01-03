@@ -1,7 +1,7 @@
 {
-  "name": "js-explorer",
+  "name": "nginx-explorer",
   "version": "0.0.1",
-  "homepage": "https://github.com/izissise/js-explorer",
+  "homepage": "https://github.com/izissise/nginx-explorer",
   "author": "Hugues Morisset <morisset.hugues@gmail.com>",
   "contributors": [
     ""
@@ -41,9 +41,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/izissise/js-explorer.git"
+    "url": "https://github.com/izissise/nginx-explorer.git"
   },
   "bugs": {
-    "url": "https://github.com/izissise/js-explorer/issues"
+    "url": "https://github.com/izissise/nginx-explorer/issues"
   }
 }
