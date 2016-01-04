@@ -87,8 +87,8 @@
   Tablesort.extend('filesize', function(item) {
     return /^\d+(\.\d+)? ?(K|M|G|T|P|E|Z|Y|B$)i?B?$/i.test(item);
   }, function(a, b) {
-    a = a == '' ? '0 B' : a;
-    b = b == '' ? '0 B' : b;
+    a = a === '' ? '0 B' : a;
+    b = b === '' ? '0 B' : b;
     a = filesize2num(a);
     b = filesize2num(b);
 
