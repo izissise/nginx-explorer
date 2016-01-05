@@ -44,7 +44,10 @@ function fileApp(api, div) {
         var sortedTable = new Tablesort(div.getElementsByTagName('table')[0]);
       }
     },
-    function(err) { console.error(err); });
+    function(err) {
+      console.error(err);
+      div.innerHTML = 'An error occured';
+    });
 }
 
 Number.prototype.padLeft = function(base, chr){
