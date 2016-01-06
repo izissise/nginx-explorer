@@ -99,15 +99,15 @@ IconMap = {
 };
 
 function iconFor(path, isDir) {
-  var iconImage = "<img src='icons/{0}.svg' width=24 class='fileicon'>";
+  var iconImage = "<img src='/icons/{0}.svg' width=24 class='fileicon'>";
   if (isDir) {
     return iconImage.format('folder');
   }
 
   var extension = path.slice(path.lastIndexOf('.') + 1);
-  var image = "application-octet-stream";
-  if (typeof IconMap[extension] != 'undefined') {
-    image = IconMap[extension];
+  var icon = "application-octet-stream";
+  if (IconMap[extension] !== undefined) {
+    icon = IconMap[extension];
   }
-  return iconImage.format(image);
+  return iconImage.format(icon);
 }
