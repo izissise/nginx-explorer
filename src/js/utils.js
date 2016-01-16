@@ -50,33 +50,41 @@ function humanFileSize(bytes, si) {
         bytes /= thresh;
         ++u;
     } while(Math.abs(bytes) >= thresh && u < units.length - 1);
-    return bytes.toFixed(1)+' '+units[u];
+    return bytes.toFixed(1) + ' ' + units[u];
 }
 
 // fade out
-function fadeOut(el){
+function fadeOut(el, speed){
   return new Promise(function(done) {
     el.style.opacity = 1;
+    var opacity = 1;
+    var startTime = new Date();
 
     (function fadeOutTransition() {
-      if ((el.style.opacity -= 0.1) < 0) {
-        el.style.display = "none";
-        done(el);
-      } else {
+      var delta = Math.min(1, (new Date() - startTime) / speed);
+      opacity = 1 - delta;
+      if (delta < 1) {
+        el.style.opacity = opacity;
         requestAnimationFrame(fadeOutTransition);
+      } else {
+        done(el);
       }
     })();
   });
 }
 
 // fade in
-function fadeIn(el, display){
+function fadeIn(el, speed){
   return new Promise(function(done) {
     el.style.opacity = 0;
-    el.style.display = display || "";
+    var opacity = 0;
+    var startTime = new Date();
 
     (function fadeInTransition() {
-      if ((el.style.opacity += 0.1) < 1.1) {
+      var delta = Math.min(1, (new Date() - startTime) / speed);
+      opacity = delta;
+      if (delta < 1) {
+        el.style.opacity = opacity;
         requestAnimationFrame(fadeInTransition);
       } else {
         el.style.opacity = 1;

@@ -6,7 +6,7 @@ window.onload = function() {
 };
 
 function fileApp(api) {
-  var fadingOut = fadeOut(filesapp);
+  var fadingOut = fadeOut(filesapp, 150);
 
   get(api).then(function(rawData) { // Request
     return JSON.parse(rawData);
@@ -32,7 +32,7 @@ function fileApp(api) {
       filesapp.innerHTML = '';
       filesapp.innerHTML = '';
       filesapp.appendChild(dataTableHtml);
-      return fadeIn(filesapp);
+      return fadeIn(filesapp, 150);
     });
   },
   function(err) {
