@@ -1,59 +1,45 @@
-function escapeHtml(text) {
-  var map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-
-  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
-var config;
+var filesapp;
 
 window.onload = function() {
-  config = document.getElementById("filesapp");
-  fileApp(config.dataset.api, config);
+  filesapp = document.getElementById("filesapp");
+  fileApp(filesapp.dataset.api);
 };
 
-function createDropDown(that) {
-  var par = that.parentNode;
-  return par;
-}
+function fileApp(api) {
+  var fadingOut = fadeOut(filesapp);
 
-function fileApp(api, div) {
-  loadJSON(api,
-    function(data) {
+  get(api).then(function(rawData) { // Request
+    return JSON.parse(rawData);
+  }).then(function(data) {
+    formatData(api, data);
+    var dataTable = ConvertJsonToTable(data, null, null, null);
+    var dataTableHtml = document.createElement('div');
+    dataTableHtml.innerHTML = dataTable;
+    if (dataTableHtml.length > 0) {
+      console.log(dataTable);
+      addSortInfo(dataTableHtml);
+      var sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
+    }
 
-      formatData(api, data);
-      var dataTable = ConvertJsonToTable(data, null, null, null);
+    if (api != filesapp.dataset.api) { // If it's not the base path
+      var posSlash = api.lastIndexOf('/', api.length - 2);
+      var posLastSlash = api.lastIndexOf('/');
+      var textLocation = api.substring(posSlash + 1, posLastSlash);
 
-      div.innerHTML = '';
-      if (api != config.dataset.api) {
-        var posSlash = api.lastIndexOf('/', api.length - 2);
-        var posLastSlash = api.lastIndexOf('/');
-        var textLocation = api.substring(posSlash + 1, posLastSlash);
+    }
 
-        div.innerHTML = ['<h3 style="center;">', escapeHtml(textLocation), '</h3>'].join("");
-      }
-      div.innerHTML += dataTable;
-      var headers = div.getElementsByTagName('th');
-      if (headers.length > 0) {
-        addSortInfo(headers);
-        var sortedTable = new Tablesort(div.getElementsByTagName('table')[0]);
-      }
-    },
-    function(err) {
-      console.error(err);
-      div.innerHTML = 'An error occured';
+    fadingOut.then(function(el) {
+      filesapp.innerHTML = '';
+      filesapp.innerHTML = '';
+      filesapp.appendChild(dataTableHtml);
+      return fadeIn(filesapp);
     });
+  },
+  function(err) {
+    console.error(err);
+    div.innerHTML = '<h3 style="center;">An error occured</h3>';
+  });
 }
-
-Number.prototype.padLeft = function(base, chr){
-    var  len = (String(base || 10).length - String(this).length) + 1;
-    return len > 0 ? new Array(len).join(chr || '0') + this : this;
-};
 
 function addSortInfo(div) {
   div[0].setAttribute('data-sort-method', 'default');
@@ -107,19 +93,4 @@ function linkify(base, data) {
   return ['<a href="', escapeHtml(base), escapeHtml(data), '">',
          iconFor(data, false), data, '</a>'
   ].join("");
-}
-
-function humanFileSize(bytes, si) {
-    var thresh = si ? 1000 : 1024;
-    if(Math.abs(bytes) < thresh) {
-        return bytes + ' B';
-    }
-    var units = si ? ['kB','MB','GB','TB','PB','EB','ZB','YB']
-        : ['KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
-    var u = -1;
-    do {
-        bytes /= thresh;
-        ++u;
-    } while(Math.abs(bytes) >= thresh && u < units.length - 1);
-    return bytes.toFixed(1)+' '+units[u];
 }
