@@ -8,6 +8,11 @@ tbody tr:nth-child(odd) {
     text-align: center;
 }
 
+#fileapp {
+  /* smooth scrolling on touch devices */
+  -webkit-overflow-scrolling: touch;
+}
+
 .fileicon {
   margin-right: 10px;
   vertical-align: middle;
