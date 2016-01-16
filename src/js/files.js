@@ -72,12 +72,13 @@ function formatData(baseUrl, data) {
      name = linkify(baseUrl, e.name);
    }
    var d = new Date(e.mtime);
-   d = [d.getDate().padLeft(),
-               (d.getMonth()+1).padLeft(),
-               d.getFullYear()].join('/') +' ' +
-              [d.getHours().padLeft(),
+   d =        [d.getHours().padLeft(),
                d.getMinutes().padLeft(),
-               d.getSeconds().padLeft()].join(':');
+               d.getSeconds().padLeft()].join(':') +
+               ' ' +
+               [d.getDate().padLeft(),
+               (d.getMonth()+1).padLeft(),
+               d.getFullYear()].join('/');
    var size = "-";
    if (e.size) {
       size = humanFileSize(e.size, false);
@@ -97,7 +98,7 @@ function formatData(baseUrl, data) {
 
 function directoryfy(base, data) {
   return ['<a href="javascript:void(0)" onclick=\'fileApp("',
-          escapeHtml(base), escapeHtml(data), '/", createDropDown(this))\'>',
+          escapeHtml(base), escapeHtml(data), '/")\'>',
           iconFor(data, true), data, '</a>'
   ].join("");
 }
