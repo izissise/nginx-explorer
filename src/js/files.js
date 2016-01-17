@@ -12,13 +12,13 @@ function fileApp(api) {
     return JSON.parse(rawData);
   }).then(function(data) {
     formatData(api, data);
+    var sortedTable;
     var dataTable = ConvertJsonToTable(data, null, null, null);
-    var dataTableHtml = document.createElement('div');
-    dataTableHtml.innerHTML = dataTable;
-    if (dataTableHtml.length > 0) {
-      console.log(dataTable);
-      addSortInfo(dataTableHtml);
-      var sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
+    if (dataTable.length > 0) {
+      var dataTableHtml = document.createElement('div');
+      dataTableHtml.innerHTML = dataTable;
+      addSortInfo(dataTableHtml.getElementsByTagName('th'));
+      sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
     }
 
     if (api != filesapp.dataset.api) { // If it's not the base path
@@ -27,25 +27,22 @@ function fileApp(api) {
       var textLocation = api.substring(posSlash + 1, posLastSlash);
 
     }
-
     fadingOut.then(function(el) {
-      filesapp.innerHTML = '';
       filesapp.innerHTML = '';
       filesapp.appendChild(dataTableHtml);
       return fadeIn(filesapp, 150);
     });
-  },
-  function(err) {
+  }, function(err) {
     console.error(err);
-    div.innerHTML = '<h3 style="center;">An error occured</h3>';
+    filesapp.innerHTML = '<h3 style="center;">An error occured</h3>';
   });
 }
 
-function addSortInfo(div) {
-  div[0].setAttribute('data-sort-method', 'default');
-  div[1].setAttribute('data-sort-method', 'filesize');
-  div[2].setAttribute('data-sort-method', 'date');
-  div[2].className += 'sort-default';
+function addSortInfo(th) {
+  th[0].setAttribute('data-sort-method', 'default');
+  th[1].setAttribute('data-sort-method', 'filesize');
+  th[2].setAttribute('data-sort-method', 'date');
+  th[2].className += 'sort-default';
 }
 
 function formatData(baseUrl, data) {
