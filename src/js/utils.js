@@ -54,7 +54,7 @@ function humanFileSize(bytes, si) {
 }
 
 // fade out
-function fadeOut(el, speed){
+function fadeOut(el, speed) {
   return new Promise(function(done) {
     el.style.opacity = 1;
     var opacity = 1;
@@ -74,7 +74,7 @@ function fadeOut(el, speed){
 }
 
 // fade in
-function fadeIn(el, speed){
+function fadeIn(el, speed) {
   return new Promise(function(done) {
     el.style.opacity = 0;
     var opacity = 0;
@@ -92,4 +92,28 @@ function fadeIn(el, speed){
       }
     })();
   });
+}
+
+if (!Date.prototype.toISOString) {
+  (function() {
+
+    function pad(number) {
+      if (number < 10) {
+        return '0' + number;
+      }
+      return number;
+    }
+
+    Date.prototype.toISOString = function() {
+      return this.getUTCFullYear() +
+        '-' + pad(this.getUTCMonth() + 1) +
+        '-' + pad(this.getUTCDate()) +
+        'T' + pad(this.getUTCHours()) +
+        ':' + pad(this.getUTCMinutes()) +
+        ':' + pad(this.getUTCSeconds()) +
+        '.' + (this.getUTCMilliseconds() / 1000).toFixed(3).slice(2, 5) +
+        'Z';
+    };
+
+  }());
 }

@@ -11,14 +11,20 @@ function fileApp(api) {
   get(api).then(function(rawData) { // Request
     return JSON.parse(rawData);
   }).then(function(data) {
-    formatData(api, data);
-    var sortedTable;
+    orderField(data); // Order field to name/Size/Date
     var dataTable = ConvertJsonToTable(data, null, null, null);
-    if (dataTable.length > 0) {
-      var dataTableHtml = document.createElement('div');
-      dataTableHtml.innerHTML = dataTable;
-      addSortInfo(dataTableHtml.getElementsByTagName('th'));
-      sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
+
+    var dataTableHtml = document.createElement('div'); // Create div container for the table
+    dataTableHtml.innerHTML = dataTable;
+
+    if (dataTable.length > 0) { // If there is files in the directory
+      addSortInfo(dataTableHtml.getElementsByTagName('th')); // Add Header sort info
+      // Format data for both sorting and pretty printing
+      addSortValue(dataTableHtml.getElementsByTagName('tbody')[0].getElementsByTagName('tr'), api);
+      dataTableHtml.getElementsByTagName('thead')[0].getElementsByTagName('tr')[0].deleteCell(3); // Remove Type columns
+
+
+      var sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
     }
 
     if (api != filesapp.dataset.api) { // If it's not the base path
@@ -38,45 +44,69 @@ function fileApp(api) {
   });
 }
 
-function addSortInfo(th) {
-  th[0].setAttribute('data-sort-method', 'default');
-  th[1].setAttribute('data-sort-method', 'filesize');
-  th[2].setAttribute('data-sort-method', 'date');
-  th[2].className += 'sort-default';
+function orderField(data) {
+  data.forEach(function(e) {
+    var size = e.size;
+    if (e.size === undefined)
+      size = "-";
+    e.Filename = e.name;
+    e.Size = size.toString();
+    e.Date = e.mtime;
+    e.Type = e.type;
+
+    delete e.size;
+    delete e.name;
+    delete e.type;
+    delete e.mtime;
+  });
 }
 
-function formatData(baseUrl, data) {
-  //Transform as a link or directory
-  data.forEach(function(e) {
-   var name = "";
-   if (e.type == "directory") {
-     name = directoryfy(baseUrl, e.name);
-   } else {
-     name = linkify(baseUrl, e.name);
-   }
-   var d = new Date(e.mtime);
-   d =        [d.getHours().padLeft(),
-               d.getMinutes().padLeft(),
-               d.getSeconds().padLeft()].join(':') +
-               ' ' +
-               [d.getDate().padLeft(),
-               (d.getMonth()+1).padLeft(),
-               d.getFullYear()].join('/');
-   var size = "-";
-   if (e.size) {
-      size = humanFileSize(e.size, false);
-   }
+function addSortInfo(th) {
+  th[0].setAttribute('data-sort-method', 'default'); // Name table Header
+  th[1].setAttribute('data-sort-method', 'number'); // FileSize table Header
+  th[2].setAttribute('data-sort-method', 'date'); // Date table Header
+  th[2].className += 'sort-default'; // Default sort to date
+  th[3].setAttribute('data-sort-method', 'default'); // Type table Header
+}
 
-   e.Filename = name;
-   e.Size = size;
-   e.Date = d;
-
-   delete e.size;
-   delete e.name;
-   delete e.type;
-   delete e.mtime;
+function addSortValue(trs, api) {
+  [].forEach.call(trs, function(tr) {
+    var tds = tr.getElementsByTagName('td');
+    formatNameField(tds[0], tds[3], api);
+    formatSizeField(tds[1]);
+    formatDateField(tds[2]);
+    tr.deleteCell(3); // Remove Type columns
   });
+}
 
+function formatNameField(tdName, tdType, baseUrl) {
+   var name = tdName.innerHTML;
+   var type = tdType.innerHTML;
+   tdName.setAttribute('data-sort', name); // Value used to sort
+   if (type == "directory") {
+     tdName.innerHTML = directoryfy(baseUrl, name);
+   } else {
+     tdName.innerHTML = linkify(baseUrl, name);
+   }
+}
+
+function formatSizeField(tdSize) {
+  var size = tdSize.innerHTML;
+  tdSize.setAttribute('data-sort', (size == '-') ? '-' : size); // Value used to sort
+  tdSize.innerHTML = (size == '-') ? '-' : humanFileSize(parseInt(size), false);
+}
+
+function formatDateField(tdDate) {
+  var date = new Date(tdDate.innerHTML);
+  tdDate.setAttribute('data-sort', date.toISOString()); // Value used to sort
+  var d = date;
+  tdDate.innerHTML = [d.getHours().padLeft(),
+                      d.getMinutes().padLeft(),
+                      d.getSeconds().padLeft()].join(':') +
+                      ' ' +
+                      [d.getDate().padLeft(),
+                      (d.getMonth() + 1).padLeft(),
+                      d.getFullYear()].join('/');
 }
 
 function directoryfy(base, data) {
