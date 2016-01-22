@@ -70,11 +70,12 @@ function addSortInfo(th) {
 }
 
 function addSortValue(trs, api) {
+  var now = new Date();
   [].forEach.call(trs, function(tr) {
     var tds = tr.getElementsByTagName('td');
     formatNameField(tds[0], tds[3], api);
     formatSizeField(tds[1]);
-    formatDateField(tds[2]);
+    formatDateField(tds[2], now);
     tr.deleteCell(3); // Remove Type columns
   });
 }
@@ -96,17 +97,36 @@ function formatSizeField(tdSize) {
   tdSize.innerHTML = (size == '-') ? '-' : humanFileSize(parseInt(size), false);
 }
 
-function formatDateField(tdDate) {
-  var date = new Date(tdDate.innerHTML);
-  tdDate.setAttribute('data-sort', date.toISOString()); // Value used to sort
-  var d = date;
-  tdDate.innerHTML = [d.getHours().padLeft(),
-                      d.getMinutes().padLeft(),
-                      d.getSeconds().padLeft()].join(':') +
-                      ' ' +
-                      [d.getDate().padLeft(),
-                      (d.getMonth() + 1).padLeft(),
-                      d.getFullYear()].join('/');
+function formatDateField(tdDate, now) {
+  var d = new Date(tdDate.innerHTML);
+  tdDate.setAttribute('data-sort', d.toISOString()); // Value used to sort
+  if ((now.getTime() - d.getTime()) > (1000*60*60*24*2)) { // more than 2days
+    tdDate.innerHTML = [d.getHours().padLeft(),
+                    d.getMinutes().padLeft(),
+                    d.getSeconds().padLeft()].join(':') +
+                    ' ' +
+                    [d.getDate().padLeft(),
+                    (d.getMonth() + 1).padLeft(),
+                    d.getFullYear()].join('/');
+  } else {
+    if ((now.getTime() - d.getTime()) < (1000*60)) { // Less than 60seconds
+      var seconds = Math.round((now.getTime() - d.getTime()) / (1000));
+      var secondsStr = (seconds == 1) ? "second" : "seconds";
+      tdDate.innerHTML = [seconds.toString(), secondsStr, "ago"].join(" ");
+    } else if ((now.getTime() - d.getTime()) < (1000*60*60)) { // Less than 60minutes
+      var minutes = Math.round((now.getTime() - d.getTime()) / (1000*60));
+      var minutesStr = (minutes == 1) ? "minute" : "minutes";
+      tdDate.innerHTML = [minutes.toString(), minutesStr, "ago"].join(" ");
+    } else if ((now.getTime() - d.getTime()) < (1000*60*60*24)) { // Less than 24hours
+      var hours = Math.round((now.getTime() - d.getTime()) / (1000*60*60));
+      var hoursStr = (hours == 1) ? "hour" : "hours";
+      tdDate.innerHTML = [hours.toString(), hoursStr, "ago"].join(" ");
+    } else { // More than one day
+      tdDate.innerHTML = "Yesterday";
+    }
+
+  }
+
 }
 
 function directoryfy(base, data) {
