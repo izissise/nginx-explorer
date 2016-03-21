@@ -1,9 +1,23 @@
 var filesapp;
 
+window.onpopstate = function(event) { // Restore wanted state
+  fileApp(event.state.location);
+};
+
 window.onload = function() {
   filesapp = document.getElementById("filesapp");
+  history.replaceState({'location': filesapp.dataset.api}, 'Files Listing', window.location.href);
   fileApp(filesapp.dataset.api);
 };
+
+function historyFileApp(api) {
+  var state = {'location': api};
+  var title = 'Files Listing';
+  var url = window.location.href;
+  history.pushState(state, title, url); // Push current page in history
+
+  fileApp(api);
+}
 
 function fileApp(api) {
   var fadingOut = fadeOut(filesapp, 150);
@@ -27,12 +41,12 @@ function fileApp(api) {
 
       var sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
 
-      if (api != filesapp.dataset.api) { // If it's not the base path
-        var posSlash = api.lastIndexOf('/', api.length - 2);
-        var posLastSlash = api.lastIndexOf('/');
-        var textLocation = api.substring(posSlash + 1, posLastSlash);
+//       if (api != filesapp.dataset.api) { // If it's not the base path
+//         var posSlash = api.lastIndexOf('/', api.length - 2);
+//         var posLastSlash = api.lastIndexOf('/');
+//         var textLocation = api.substring(posSlash + 1, posLastSlash);
+//       }
 
-      }
       fadingOut.then(function(el) {
         filesapp.innerHTML = '';
         filesapp.appendChild(dataTableHtml);
@@ -131,7 +145,7 @@ function formatDateField(tdDate, now) {
 }
 
 function directoryfy(base, data) {
-  return ['<a href="javascript:void(0)" onclick=\'fileApp("',
+  return ['<a href="javascript:void(0)" onclick=\'historyFileApp("',
           escapeHtml(base), escapeHtml(data), '/")\'>',
           iconFor(data, true), data, '</a>'
   ].join("");
