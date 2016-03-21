@@ -11,33 +11,34 @@ function fileApp(api) {
   get(api).then(function(rawData) { // Request
     return JSON.parse(rawData);
   }).then(function(data) {
-    orderField(data); // Order field to name/Size/Date
-    var dataTable = ConvertJsonToTable(data, null, null, null);
+    if (data.length <= 0) {
+      filesapp.innerHTML = '<h3 style="center;">The directory is empty</h3>';
+    } else {
+      orderField(data); // Order field to name/Size/Date
+      var dataTable = ConvertJsonToTable(data, null, null, null);
 
-    var dataTableHtml = document.createElement('div'); // Create div container for the table
-    dataTableHtml.innerHTML = dataTable;
+      var dataTableHtml = document.createElement('div'); // Create div container for the table
+      dataTableHtml.innerHTML = dataTable;
 
-    if (dataTable.length > 0) { // If there is files in the directory
       addSortInfo(dataTableHtml.getElementsByTagName('th')); // Add Header sort info
       // Format data for both sorting and pretty printing
       addSortValue(dataTableHtml.getElementsByTagName('tbody')[0].getElementsByTagName('tr'), api);
       dataTableHtml.getElementsByTagName('thead')[0].getElementsByTagName('tr')[0].deleteCell(3); // Remove Type columns
 
-
       var sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
-    }
 
-    if (api != filesapp.dataset.api) { // If it's not the base path
-      var posSlash = api.lastIndexOf('/', api.length - 2);
-      var posLastSlash = api.lastIndexOf('/');
-      var textLocation = api.substring(posSlash + 1, posLastSlash);
+      if (api != filesapp.dataset.api) { // If it's not the base path
+        var posSlash = api.lastIndexOf('/', api.length - 2);
+        var posLastSlash = api.lastIndexOf('/');
+        var textLocation = api.substring(posSlash + 1, posLastSlash);
 
+      }
+      fadingOut.then(function(el) {
+        filesapp.innerHTML = '';
+        filesapp.appendChild(dataTableHtml);
+        return fadeIn(filesapp, 150);
+      });
     }
-    fadingOut.then(function(el) {
-      filesapp.innerHTML = '';
-      filesapp.appendChild(dataTableHtml);
-      return fadeIn(filesapp, 150);
-    });
   }, function(err) {
     console.error(err);
     filesapp.innerHTML = '<h3 style="center;">An error occured</h3>';
