@@ -10,7 +10,7 @@ git clone https://github.com/izissise/nginx-explorer.git
 cd nginx-explorer
 ```
 
-You need nodejs:
+You need npm:
 ```
 npm install -g bower
 npm install
