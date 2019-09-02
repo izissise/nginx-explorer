@@ -19,6 +19,6 @@ npm run build
 
 Quick launch with docker:
 ```
-docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v $(pwd)/www:/var/www/files -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf nginx
+docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v .../nginx-explorer/www:/var/www/files -v .../nginx-explorer/nginx.conf:/etc/nginx/conf.d/default.conf nginx
 ```
 Go to 127.0.0.1 with you browser.
