@@ -15,14 +15,15 @@ var mainBowerFiles = require('main-bower-files');
 // Define default destination folder
 var dest = 'www/';
 
+
 gulp.task('bower-install', function(){
     return bower();
 });
 
-gulp.task('js', gulp.series('bower-install'), function() {
+gulp.task('js', function() {
   var jsFiles = ['src/js/*'];
   var bowerFile = mainBowerFiles();
-      gulp.src(bowerFile.concat(jsFiles))
+  return gulp.src(bowerFile.concat(jsFiles))
     .pipe(filter('*.js'))
     .pipe(concat('main.js'))
     .pipe(uglify())
@@ -31,10 +32,10 @@ gulp.task('js', gulp.series('bower-install'), function() {
     .pipe(gulp.dest(dest));
 });
 
-gulp.task('css', gulp.series('bower-install'), function() {
+gulp.task('css', function() {
   var cssFiles = ['src/css/*'];
   var bowerFile = mainBowerFiles();
-      gulp.src(bowerFile.concat(cssFiles))
+  return gulp.src(bowerFile.concat(cssFiles))
     .pipe(filter('*.css'))
     .pipe(order([
         'reset.css',
@@ -48,9 +49,9 @@ gulp.task('css', gulp.series('bower-install'), function() {
     .pipe(gulp.dest(dest));
 });
 
-gulp.task('html', gulp.series('bower-install'), function() {
+gulp.task('html', function() {
   var htmlFiles = ['src/html/*'];
-    gulp.src(htmlFiles)
+  return gulp.src(htmlFiles)
     .pipe(filter('*.html'))
     .pipe(minifyHtml())
     .pipe(chmod(644))
