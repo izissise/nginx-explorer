@@ -1,7 +1,15 @@
 language: node_js
 node_js:
-  - 8
+- 8
 install:
-  - npm install -g bower
-  - npm install
+- npm install -g bower
+- npm install
 script: npm run build
+deploy:
+  provider: releases
+  api_key:
+    secure: WxmUP46Y7ddsfMetlKL4bjT3Ny12BytqucVskj3Or6VNZ+YR7vNa8h4ZrWbHi95YcXcJHX/9rDod/jT6wdtIWA5/ilksq1PC7dY11QHZ0k/OrQMBHhMGQN4PfJvruGPv80FwFFm01i/A/bqiqRWIzDHwaMkOdKZwPaIFPgQg3CrvjucIjGTxHI+XVJ7aGzl3gNyzwSn1b29lT9QVWr6IBy32OPzw2tGKXW+dUgP52U2kjYRM8dDnL7LZfjII2bYuY+RG+PjIICFPvDplGt9gaMNoci/8S13AX2jAaigExmWsSDmYWaY771EpByaJmDdnxvbqz5VPL9RrzeUCzpPapK4FCysORcjzp/Gbm64P3a2tcoBpiIk+N04BuBPQDCkLLW9Pl63oP9z6hI41CPYpDipwkC81JrUeY7abqW4W1e22sa8vGBm+Ll125dpjBwVpFSkwFHjgTCY33+DWLcr07MSmtz1qsni/alRaW19ENP0aPRYurj2oKibXWADYiZoh5EPzvlijGKWtyFZ2YmFCP0C5/JzBaVNpz9zS+AKsXoM9zmMDD0OeYuzo/qjD4HA5SgUUhwiijX/byB8VWEKJ2Z1BPtqKtMNw6ElwoCMQmKxErRbdzdWJsCwtoJoSZaHk+9rPeAnBUq4lzTb0sVBAOf3z6By9To8CQK5cihCCqFI=
+  file: www
+  on:
+    repo: izissise/nginx-explorer
+    tags: true
