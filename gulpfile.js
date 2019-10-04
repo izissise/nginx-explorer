@@ -69,10 +69,10 @@ gulp.task('build', gulp.series(['bower-install', 'js', 'css', 'html']));
 
 
 // Watch Files For Changes
-gulp.task('watch', function() {
-    gulp.watch('src/js/*.js', ['lint', 'js']);
-    gulp.watch('src/css/*.css', ['css']);
-    gulp.watch('src/html/*.html', ['html']);
+gulp.task('watch', () => {
+    gulp.watch('src/js/*.js', gulp.series(['lint', 'js']));
+    gulp.watch('src/css/*.css', gulp.series(['css']));
+    gulp.watch('src/html/*.html', gulp.series(['html']));
 });
 
 gulp.task('default', gulp.series(['lint', 'build']));
