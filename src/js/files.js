@@ -7,15 +7,32 @@ window.onpopstate = function(event) { // Restore wanted state
 window.onload = function() {
   filesapp = document.getElementById("filesapp");
   history.replaceState({'location': filesapp.dataset.api}, 'Files Listing', window.location.href);
-  fileApp(filesapp.dataset.api);
+
+  var url = window.location.href;
+  var path = "";
+  var posSlash = url.indexOf('/', "https://".length + 2);
+  if ((posSlash !== -1) && ((posSlash + 1) != url.length)) {
+    path = url.substring(posSlash + 1);
+  }
+  fileApp(filesapp.dataset.api + path);
 };
 
 function historyFileApp(api) {
   var state = {'location': api};
   var title = 'Files Listing';
   var url = window.location.href;
-  history.pushState(state, title, url); // Push current page in history
 
+  var path = "";
+  var base_url = url;
+  // Set the correct path in the url bar
+  if (api != filesapp.dataset.api) { // If it's not the base path
+    path = '/' + api.replace(filesapp.dataset.api, "").replace(/\/$/, "");
+  }
+  var posSlash = url.indexOf('/', "https://".length + 2);
+  if (posSlash !== -1) {
+    base_url = url.substring(0, posSlash);
+  }
+  window.history.pushState(state, title, base_url + path); // Push new page in history
   fileApp(api);
 }
 
@@ -40,12 +57,6 @@ function fileApp(api) {
       dataTableHtml.getElementsByTagName('thead')[0].getElementsByTagName('tr')[0].deleteCell(3); // Remove Type columns
 
       var sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
-
-//       if (api != filesapp.dataset.api) { // If it's not the base path
-//         var posSlash = api.lastIndexOf('/', api.length - 2);
-//         var posLastSlash = api.lastIndexOf('/');
-//         var textLocation = api.substring(posSlash + 1, posLastSlash);
-//       }
 
       fadingOut.then(function(el) {
         filesapp.innerHTML = '';
