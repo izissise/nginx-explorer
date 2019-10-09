@@ -12,7 +12,7 @@ window.onload = function() {
   var path = "";
   var posSlash = url.indexOf('/', "https://".length + 2);
   if ((posSlash !== -1) && ((posSlash + 1) != url.length)) {
-    path = url.substring(posSlash + 1);
+    path = url.substring(posSlash + 1) + '/';
   }
   fileApp(filesapp.dataset.api + path);
 };
