@@ -44,6 +44,7 @@ function fileApp(api) {
   }).then(function(data) {
     if (data.length <= 0) {
       filesapp.innerHTML = '<h3 style="center;">The directory is empty</h3>';
+      fadeIn(filesapp, 150);
     } else {
       orderField(data); // Order field to name/Size/Date
       var dataTable = ConvertJsonToTable(data, null, null, null);
@@ -67,6 +68,7 @@ function fileApp(api) {
   }, function(err) {
     console.error(err);
     filesapp.innerHTML = '<h3 style="center;">An error occured</h3>';
+    fadeIn(filesapp, 150);
   });
 }
 
