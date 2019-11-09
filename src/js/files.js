@@ -142,7 +142,7 @@ function formatDateField(tdDate, now) {
                     [d.getDate().padLeft(),
                     (d.getMonth() + 1).padLeft(),
                     d.getFullYear()].join('/');
-  } else {
+  } else if ((now.getTime() - d.getTime()) > -(1000*60*60*12)) {
     if ((now.getTime() - d.getTime()) < (1000*60)) { // Less than 60seconds
       var seconds = Math.round((now.getTime() - d.getTime()) / (1000));
       var secondsStr = (seconds == 1) ? "second" : "seconds";
@@ -156,11 +156,13 @@ function formatDateField(tdDate, now) {
       var hoursStr = (hours == 1) ? "hour" : "hours";
       tdDate.innerHTML = [hours.toString(), hoursStr, "ago"].join(" ");
     } else { // More than one day
-      tdDate.innerHTML = "Yesterday";
+      tdDate.innerHTML = "Yesterday" + ' ' + [d.getHours().padLeft(),
+                                              d.getMinutes().padLeft(),
+                                              d.getSeconds().padLeft()].join(':');
     }
-
+  } else { // We are too far in the future don't display
+      tdDate.innerHTML = '-';
   }
-
 }
 
 function directoryfy(base, data) {
