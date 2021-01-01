@@ -175,7 +175,8 @@ function directoryfy(base, data) {
 }
 
 function linkify(base, data) {
-  return ['<a href="', escapeHtml(base), escapeHtml(data), '">',
+  var name = escapeHtml(data);
+  return ['<a href="', escapeHtml(base), name, '" download="', name, '">',
          iconFor(data, false), data, '</a>'
   ].join("");
 }
