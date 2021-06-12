@@ -92,8 +92,9 @@ function orderField(data) {
 function addSortInfo(th) {
   th[0].setAttribute('data-sort-method', 'default'); // Name table Header
   th[1].setAttribute('data-sort-method', 'number'); // FileSize table Header
-  th[2].setAttribute('data-sort-method', 'date'); // Date table Header
-  th[2].className += 'data-sort-default'; // Default sort to date
+  th[2].setAttribute('data-sort-method', 'number'); // Date table Header
+  th[2].setAttribute('data-sort-default', ''); // Default sort to date
+  th[2].setAttribute('aria-sort', 'ascending'); // Default sort to date
   th[3].setAttribute('data-sort-method', 'default'); // Type table Header
 }
 
@@ -135,7 +136,7 @@ function formatSizeField(tdSize) {
 
 function formatDateField(tdDate, now) {
   var d = new Date(tdDate.innerHTML);
-  tdDate.setAttribute('data-sort', d.toISOString()); // Value used to sort
+  tdDate.setAttribute('data-sort', d.getTime()); // Value used to sort
   if ((now.getTime() - d.getTime()) > (1000*60*60*24*2)) { // more than 2days
     tdDate.innerHTML = [d.getHours().padLeft(),
                     d.getMinutes().padLeft(),
