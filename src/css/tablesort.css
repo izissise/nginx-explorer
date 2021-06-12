@@ -119,37 +119,46 @@ table thead:first-child tr:first-child th {
 table tbody+tbody {
     border-top: 2px solid #ddd
 }
-th.sort-header::-moz-selection {
-    background: 0 0
+
+
+th[role=columnheader]:not(.no-sort) {
+    cursor: pointer;
 }
-th.sort-header::selection {
-    background: 0 0
-}
-th.sort-header {
-    cursor: pointer
-}
-table th.sort-header:after {
+
+th[role=columnheader]:not(.no-sort):after {
     content: '';
     float: right;
     margin-top: 7px;
     border-width: 0 4px 4px;
     border-style: solid;
     border-color: #404040 transparent;
-    visibility: hidden
+    visibility: hidden;
+    opacity: 0;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
-table th.sort-header:hover:after {
-    visibility: visible
-}
-table th.sort-down:after,
-table th.sort-down:hover:after,
-table th.sort-up:after {
-    visibility: visible;
-    opacity: .4
-}
-table th.sort-up:after {
+
+th[aria-sort=ascending]:not(.no-sort):after {
     border-bottom: none;
-    border-width: 4px 4px 0
+    border-width: 4px 4px 0;
 }
+
+th[aria-sort]:not(.no-sort):after {
+    visibility: visible;
+    opacity: 0.4;
+}
+
+th[role=columnheader]:not(.no-sort):hover:after {
+    visibility: visible;
+    opacity: 1;
+}
+
+
+
+
+
 .page .inner {
     width: 960px;
     margin: 0 auto;

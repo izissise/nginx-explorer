@@ -16,6 +16,6 @@
   ],
   "dependencies": {
     "Json-to-HTML-Table": "git://github.com/izissise/Json-to-HTML-Table",
-    "tablesort": "git://github.com/tristen/tablesort#~3.0.2"
+    "tablesort": "git://github.com/tristen/tablesort#~5.2.1"
   }
 }

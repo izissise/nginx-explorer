@@ -93,7 +93,7 @@ function addSortInfo(th) {
   th[0].setAttribute('data-sort-method', 'default'); // Name table Header
   th[1].setAttribute('data-sort-method', 'number'); // FileSize table Header
   th[2].setAttribute('data-sort-method', 'date'); // Date table Header
-  th[2].className += 'sort-default'; // Default sort to date
+  th[2].className += 'data-sort-default'; // Default sort to date
   th[3].setAttribute('data-sort-method', 'default'); // Type table Header
 }
 
