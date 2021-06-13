@@ -11,8 +11,20 @@
   <meta name="description" content="Files listing">
   <meta property="og:type" content="listing">
   <link rel="stylesheet" type="text/css" href="/main.css">
+</head>
 <body class="background">
   <div class="grid">
+  <div id="uploadapp" class="grid__col grid__col--3-of-12 grid__col--push-7-of-12" upload-api="/upload/">
+        <form action="/upload/" method="post" enctype="multipart/form-data">
+            <div class="file-upload">
+                <div class="file-select">
+                    <input class="file-select-button" type="submit" value="Upload">
+                    <span class="file-select-name" id="fileName"></span>
+                    <input type="file" name="file" id="fileUpload">
+                </div>
+            </div>
+        </form>
+  </div>
   <div id="filesapp" class="grid__col grid__col--10-of-12 grid__col--centered" data-api="/files/">
      <noscript>You need Javascript to load the page. Sorry!</noscript>
      <h3>Loading...</h3>

@@ -1,3 +1,11 @@
+function onWindowLoad(callback) {
+      if(window.addEventListener){
+          window.addEventListener('load', callback, false);
+      }else{
+          window.attachEvent('onload', callback);
+      }
+}
+
 function get(path) {
   return new Promise(function(resolve, reject) {
     var request = new XMLHttpRequest();

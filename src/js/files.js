@@ -4,7 +4,7 @@ window.onpopstate = function(event) { // Restore wanted state
   fileApp(event.state.location);
 };
 
-window.onload = function() {
+onWindowLoad(function() {
   filesapp = document.getElementById("filesapp");
   history.replaceState({'location': filesapp.dataset.api}, 'Files Listing', window.location.href);
 
@@ -15,7 +15,7 @@ window.onload = function() {
     path = url.substring(posSlash + 1) + '/';
   }
   fileApp(filesapp.dataset.api + path);
-};
+});
 
 function historyFileApp(api) {
   var state = {'location': api};
@@ -37,14 +37,14 @@ function historyFileApp(api) {
 }
 
 function fileApp(api) {
-  var fadingOut = fadeOut(filesapp, 150);
+  var fadingOut = fadeOut(filesapp, 120);
 
   get(api).then(function(rawData) { // Request
     return JSON.parse(rawData);
   }).then(function(data) {
     if (data.length <= 0) {
       filesapp.innerHTML = '<h3 style="center;">The directory is empty</h3>';
-      fadeIn(filesapp, 150);
+      fadeIn(filesapp, 60);
     } else {
       orderField(data); // Order field to name/Size/Date
       var dataTable = ConvertJsonToTable(data, null, null, null);
@@ -60,15 +60,16 @@ function fileApp(api) {
       var sortedTable = new Tablesort(dataTableHtml.getElementsByTagName('table')[0]);
 
       fadingOut.then(function(el) {
+        // https://developer.mozilla.org/en-US/docs/Web/API/Element/replaceChildren
         filesapp.innerHTML = '';
         filesapp.appendChild(dataTableHtml);
-        return fadeIn(filesapp, 150);
+        return fadeIn(filesapp, 80);
       });
     }
   }, function(err) {
     console.error(err);
-    filesapp.innerHTML = '<h3 style="center;">An error occured</h3>';
-    fadeIn(filesapp, 150);
+    filesapp.innerHTML = '<h3 style="center;">An error occurred</h3>';
+    fadeIn(filesapp, 80);
   });
 }
 
