@@ -1,6 +1,6 @@
 // Include Gulp
 var gulp = require('gulp');
-var uglify = require('gulp-uglify');
+var terser = require('gulp-terser');
 var jshint = require('gulp-jshint');
 var concat = require('gulp-concat');
 var filter = require('gulp-filter');
@@ -26,7 +26,7 @@ gulp.task('js', function() {
   return gulp.src(bowerFile.concat(jsFiles))
     .pipe(filter('*.js'))
     .pipe(concat('main.js'))
-    .pipe(uglify())
+    .pipe(terser())
     .pipe(rename('main.min.js'))
     .pipe(chmod(644))
     .pipe(gulp.dest(dest));
@@ -60,7 +60,7 @@ gulp.task('html', function() {
 
 gulp.task('lint', function() {
     return gulp.src('src/js/*.js')
-    .pipe(jshint())
+    .pipe(jshint({'esversion': 8}))
     .pipe(jshint.reporter('default'));
 });
 
