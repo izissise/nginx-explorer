@@ -43,7 +43,7 @@ function fileApp(api) {
     return JSON.parse(rawData);
   }).then(function(data) {
     if (data.length <= 0) {
-      filesapp.innerHTML = '<h3 style="center;">The directory is empty</h3>';
+      filesapp.innerHTML = '<h3 style="center;">Directory is empty</h3>';
       fadeIn(filesapp, 60);
     } else {
       orderField(data); // Order field to name/Size/Date
