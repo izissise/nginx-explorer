@@ -1,5 +1,5 @@
 
-onWindowLoad(async function() {
+onWindowLoad(function() {
     // Feature detection for required features
     if (!(!!((typeof(File) !== 'undefined') && (typeof(Blob) !== 'undefined') && (typeof(FileList) !== 'undefined') && (Blob.prototype.webkitSlice|| Blob.prototype.mozSlice || Blob.prototype.slice)))) {
         console.error('Browser does not support chunked uploading');
@@ -10,30 +10,43 @@ onWindowLoad(async function() {
     var upload_endpoint = upload_app.dataset.api;
 
     // First check that upload is authorized for this session
-    var handle_upload_func = await server_upload_capa(upload_endpoint);
+    server_upload_capa(upload_endpoint).then(function(upload_func) {
+        if (upload_func === null) { return; }
+        // Server support upload
+        upload_activate_ui(upload_endpoint, upload_func);
+    })
+});
 
+function upload_activate_ui(upload_endpoint, upload_func) {
+    // Unhide
+    document.querySelector('.file-upload').classList.remove("hide");
 
     // File upload # TODO support multiple upload
     document.querySelector('#upload-button').addEventListener('click', function() {
         var file = document.querySelector('#file-to-upload').files[0];
+        document.querySelector('#upload-indicator').classList.remove("hide");
         if (file === undefined) { return; }
         //generate random long number for SessionID
         var sessionID = Math.round(Math.pow(10,17)*Math.random());
 
-        if (!handle_upload_func) {
+        if (!upload_func) {
             console.error("Handle upload func is null");
             return;
         }
-        var upload = handle_upload_func(upload_endpoint, '', sessionID, file, function(progress) {
+        var upload = upload_func(upload_endpoint, '', sessionID, file, function(progress) {
             console.log('Total file progress is ' + Math.floor(progress * 100) + '%');
         }, function(responseText) {
             console.log('Success - server responded with:', responseText);
+            document.querySelector('#upload-indicator').classList.add("hide");
+        }, function(errorText) {
+            console.error('A server error occurred: ' + errorText); // Could retry at this stage depending on xhr.status
+            document.querySelector('#upload-indicator').classList.add("hide");
         });
 
     }, false);
 
 
-    // Label with filename
+    // Filename label on change
     var uploads = document.querySelectorAll('.file-upload');
     Array.prototype.forEach.call(uploads, function(upload) {
         var label = upload.querySelector('label');
@@ -52,11 +65,10 @@ onWindowLoad(async function() {
                 label.innerHTML = labelVal;
         });
     });
-});
+}
 
-
-async function server_upload_capa(endpoint) {
-    var request = await new Promise(function(resolve) {
+function server_upload_capa(endpoint) {
+    var promise = new Promise(function(resolve) {
         xhr = new XMLHttpRequest();
         xhr.open('GET', endpoint, true);
         xhr.addEventListener("load", function() {
@@ -67,22 +79,26 @@ async function server_upload_capa(endpoint) {
         });
         xhr.send();
     });
-    if (request[0] == 200) {
-        // If it returns contents there probably a filename collision with the endpoint
-        if (request[1].length == 0) {
-            return doUploadRaw;
+    return promise.then(function(request) {
+        if (request[0] == 200) {
+            // If it returns contents there probably a filename collision with the endpoint
+            if (request[1].length == 0) {
+                return doUploadRaw;
+            }
+        } else if (request[0] == 411) {
+            return doUploadChunked;
+        } else if (request[0] == 404) {
+            console.info("Server doesn't support upload");
+        } else if (request[0] == 403) {
+            console.warn("Upload need auth");
+        } else {
+            console.error(request);
         }
-    } else if (request[0] == 411) {
-        return doUploadChunked;
-    } else if (request[0] == 403) {
-        console.warn("Need auth");
-    } else {
-        console.error(request);
-    }
-    return null;
+        return null;
+    });
 }
 
-function doUploadRaw(url, extraParams, sessionID, file, progress, success) {
+function doUploadRaw(url, extraParams, sessionID, file, progress, success, error) {
     aborting = false;
 
     xhr = new XMLHttpRequest();
@@ -117,7 +133,7 @@ function doUploadRaw(url, extraParams, sessionID, file, progress, success) {
                 try {
                     xhr.abort();
                 } catch (err) {}
-                console.error('A server error occurred: ' + xhr.responseText); // Could retry at this stage depending on xhr.status
+                error(xhr.responseText);
             }
         }
     });
@@ -130,7 +146,7 @@ function doUploadRaw(url, extraParams, sessionID, file, progress, success) {
         try {
             xhr.abort();
         } catch (err) {}
-        console.error('A server error occurred: ' + xhr.responseText); // Could retry at this stage depending on xhr.status
+        error(xhr.responseText);
     });
     xhr.send(file);
     return {
@@ -153,7 +169,7 @@ function doUploadRaw(url, extraParams, sessionID, file, progress, success) {
 
 
 
-function doUploadChunked(url, extraParams, sessionID, file, progress, success) {
+function doUploadChunked(url, extraParams, sessionID, file, progress, success, error) {
     var chunkSize = 32000,// this is first chunk size, which will be adaptively expanded depending on upload speed
         aborting = false,
         TO = null,
@@ -238,8 +254,7 @@ function doUploadChunked(url, extraParams, sessionID, file, progress, success) {
                         try {
                             xhr.abort();
                         } catch (err) {}
-
-                        console.error('A server error occurred: ' + xhr.responseText); // Could retry at this stage depending on xhr.status
+                        error(xhr.responseText);
                     }
                 }
             });
@@ -254,8 +269,7 @@ function doUploadChunked(url, extraParams, sessionID, file, progress, success) {
                 try {
                     xhr.abort();
                 } catch (err) {}
-
-                console.error('A server error occurred: ' + xhr.responseText); // Could retry at this stage depending on xhr.status
+                error(xhr.responseText);
             });
 
             xhr.setRequestHeader('Content-Type', 'application/octet-stream');

@@ -114,7 +114,6 @@ function formatNameField(tdName, tdType, baseUrl) {
    var name = tdName.innerHTML;
    var type = tdType.innerHTML;
    name = escape(name);
-   console.log(name);
    name = name.replace(/\%C3\%u201A/g, 'Â');
    name = name.replace(/\%C3\%u20AC/g, 'À');
    name = name.replace(/\%C3\%u2021/g, 'Ç');

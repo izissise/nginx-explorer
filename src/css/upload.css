@@ -1,8 +1,7 @@
 
 
 .file-upload {
-	display: block;
-	text-align: center;
+	text-align: left;
 	font-family: Helvetica, Arial, sans-serif;
 	font-size: 12px;
     margin-top: 10px;
@@ -63,4 +62,43 @@
 	overflow: hidden;
 	position: absolute;
 	z-index: -1;
+}
+
+.hide {
+	display: none;
+}
+
+/* https://github.com/metajunaid/SpinBolt */
+/* moving indicator */
+.sbl-rect-spin-fill {
+  box-sizing: content-box;
+  color: #5a5a5a;
+  height: 30px;
+  width: 30px;
+  border: 2px solid;
+  display: inline-block;
+  animation: rect-rotate 1.2s  linear infinite;
+}
+
+.sbl-rect-spin-fill::after {
+  content: '';
+  height: 0;
+  width: 30px;
+  display: block;
+  background: rgba(90, 90, 90, 0.7);
+  animation: fill-rect 1.2s linear infinite;
+}
+
+@keyframes rect-rotate {
+  0% {
+    transform: rotate(0); }
+  50%, 100% {
+    transform: rotate(180deg); }
+}
+
+@keyframes fill-rect {
+  0%, 50% {
+    height: 0; }
+  100% {
+    height: 30px; }
 }
