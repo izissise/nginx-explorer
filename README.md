@@ -31,4 +31,3 @@ docker run --rm -it -p 80:80 -v /home/hugues/Downloads:/home/user/downloads -v /
 ## Upload multipart support (nginx + lua)
 https://github.com/pgaertig/nginx-big-upload
 
-docker run --rm -it -p 80:80 -v /home/hugues/Downloads:/home/user/downloads -v /home/hugues/Downloads/upload-tmp:/home/user/uploads -v $PWD/www:/var/www/files -v $PWD/nginx_upload.conf:/etc/nginx/conf.d/default.conf:ro -v $PWD/nginx-big-upload/lib:/opt/nginx-big-upload/lib:ro openresty/openresty:alpine

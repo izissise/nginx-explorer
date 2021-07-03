@@ -7,26 +7,14 @@ function onWindowLoad(callback) {
 }
 
 function get(path) {
-  return new Promise(function(resolve, reject) {
-    var request = new XMLHttpRequest();
-    request.overrideMimeType("text/html; charset=ISO-8859-1");
-    // Handle network errors
-    request.onerror = function() {
-      reject(Error("Network Error"));
-    };
-    request.onreadystatechange = function() {
-        if (request.readyState === XMLHttpRequest.DONE) {
-          if (request.status >= 200 && request.status < 400) {
-              resolve(request.responseText);
-            } else {
-              reject(request);
-            }
+  return fetch(path, {
+            credentials: 'omit'
+    }).then(function(response) {
+        if (!response.ok) {
+            return Promise.reject(response);
         }
-    };
-
-    request.open("GET", path, true);
-    request.send();
-  });
+        return response;
+    });
 }
 
 Number.prototype.padLeft = function(base, chr){

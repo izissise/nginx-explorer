@@ -68,31 +68,23 @@ function upload_activate_ui(upload_endpoint, upload_func) {
 }
 
 function server_upload_capa(endpoint) {
-    var promise = new Promise(function(resolve) {
-        xhr = new XMLHttpRequest();
-        xhr.open('GET', endpoint, true);
-        xhr.addEventListener("load", function() {
-            resolve([xhr.status, xhr.response]);
-        });
-        xhr.addEventListener('error', function(e) {
-            resolve([xhr.status, e]);
-        });
-        xhr.send();
-    });
-    return promise.then(function(request) {
-        if (request[0] == 200) {
-            // If it returns contents there probably a filename collision with the endpoint
-            if (request[1].length == 0) {
-                return doUploadRaw;
-            }
-        } else if (request[0] == 411) {
+    return get(endpoint).then(function (response) {
+        // 200 <= status < 400
+
+        // If it returns contents there probably a filename collision with the endpoint
+        if (response.text().length == 0) {
+            return doUploadRaw;
+        }
+    }, function (response) {
+        if (response.status == 200) {
+        } else if (response.status == 411) {
             return doUploadChunked;
-        } else if (request[0] == 404) {
+        } else if (response.status == 404) {
             console.info("Server doesn't support upload");
-        } else if (request[0] == 403) {
+        } else if (response.status == 403) {
             console.warn("Upload need auth");
         } else {
-            console.error(request);
+            console.error(response);
         }
         return null;
     });

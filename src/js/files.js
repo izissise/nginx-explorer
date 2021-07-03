@@ -39,8 +39,8 @@ function historyFileApp(api) {
 function fileApp(api) {
   var fadingOut = fadeOut(filesapp, 120);
 
-  get(api).then(function(rawData) { // Request
-    return JSON.parse(rawData);
+  get(api).then(function(response) { // Request
+    return response.json();
   }).then(function(data) {
     if (data.length <= 0) {
       filesapp.innerHTML = '<h3 style="center;">Directory is empty</h3>';
@@ -66,10 +66,16 @@ function fileApp(api) {
         return fadeIn(filesapp, 80);
       });
     }
-  }, function(err) {
-    console.error(err);
-    filesapp.innerHTML = '<h3 style="center;">An error occurred</h3>';
-    fadeIn(filesapp, 80);
+  }, function(response_err) {
+    if (response_err.status === 401) {
+        console.log("File list need auth");
+        fadeIn(filesapp, 80);
+        // TODO Call a func that will set the auth ui for fileapp
+    } else {
+        console.error(response_err);
+        filesapp.innerHTML = '<h3 style="center;">An error occurred</h3>';
+        fadeIn(filesapp, 80);
+    }
   });
 }
 
