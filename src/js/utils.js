@@ -7,8 +7,13 @@ function onWindowLoad(callback) {
 }
 
 function get(path) {
+  var headers = new Headers();
+  if (g_authorization_header !== undefined) {
+      headers.append('Authorization', g_authorization_header);
+  }
   return fetch(path, {
-            credentials: 'omit'
+        credentials: 'omit', // Prevent display of default pop-up
+        headers: headers,
     }).then(function(response) {
         if (!response.ok) {
             return Promise.reject(response);

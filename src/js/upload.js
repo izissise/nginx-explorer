@@ -1,5 +1,7 @@
 
-onWindowLoad(function() {
+onWindowLoad(setup_upload);
+
+function setup_upload() {
     // Feature detection for required features
     if (!(!!((typeof(File) !== 'undefined') && (typeof(Blob) !== 'undefined') && (typeof(FileList) !== 'undefined') && (Blob.prototype.webkitSlice|| Blob.prototype.mozSlice || Blob.prototype.slice)))) {
         console.error('Browser does not support chunked uploading');
@@ -11,11 +13,14 @@ onWindowLoad(function() {
 
     // First check that upload is authorized for this session
     server_upload_capa(upload_endpoint).then(function(upload_func) {
-        if (upload_func === null) { return; }
+        if (upload_func === null) {
+            document.querySelector('.file-upload').classList.add("hide");
+            return;
+        }
         // Server support upload
         upload_activate_ui(upload_endpoint, upload_func);
     })
-});
+}
 
 function upload_activate_ui(upload_endpoint, upload_func) {
     // Unhide
@@ -98,6 +103,9 @@ function doUploadRaw(url, extraParams, sessionID, file, progress, success, error
         xhr.open('POST', url + (url.indexOf('?') > -1 ? '&' : '?') + extraParams, true);
     } else {
         xhr.open('POST', url, true);
+    }
+    if (g_authorization_header !== undefined) {
+        xhr.setRequestHeader('Authorization', g_authorization_header);
     }
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
     xhr.setRequestHeader('Content-Disposition', 'attachment; filename="' + encodeURIComponent(file.name) + '"');
@@ -264,6 +272,9 @@ function doUploadChunked(url, extraParams, sessionID, file, progress, success, e
                 error(xhr.responseText);
             });
 
+            if (g_authorization_header !== undefined) {
+                xhr.setRequestHeader('Authorization', g_authorization_header);
+            }
             xhr.setRequestHeader('Content-Type', 'application/octet-stream');
             xhr.setRequestHeader('Content-Disposition', 'attachment; filename="' + encodeURIComponent(file.name) + '"');
             xhr.setRequestHeader('X-Content-Range', 'bytes ' + chunkStart + '-' + chunkEnd + '/' + file.size);

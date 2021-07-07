@@ -4,7 +4,9 @@ window.onpopstate = function(event) { // Restore wanted state
   fileApp(event.state.location);
 };
 
-onWindowLoad(function() {
+onWindowLoad(setup_files);
+
+function setup_files() {
   filesapp = document.getElementById("filesapp");
   history.replaceState({'location': filesapp.dataset.api}, 'Files Listing', window.location.href);
 
@@ -15,7 +17,7 @@ onWindowLoad(function() {
     path = url.substring(posSlash + 1) + '/';
   }
   fileApp(filesapp.dataset.api + path);
-});
+}
 
 function historyFileApp(api) {
   var state = {'location': api};
@@ -69,6 +71,7 @@ function fileApp(api) {
   }, function(response_err) {
     if (response_err.status === 401) {
         console.log("File list need auth");
+        filesapp.innerHTML = auth_html();
         fadeIn(filesapp, 80);
         // TODO Call a func that will set the auth ui for fileapp
     } else {

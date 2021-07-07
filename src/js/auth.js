@@ -1,29 +1,38 @@
-// function logout(auth_endpoint) {
-//
-// 	// To invalidate a basic auth login:
-// 	//
-// 	// 	1. Call this logout function.
-// 	//	2. It makes a GET request to an URL with false Basic Auth credentials
-// 	//	3. The URL returns a 401 Unauthorized
-// 	// 	4. Forward to some "you-are-logged-out"-page
-// 	// 	5. Done, the Basic Auth header is invalid now
-//
-// 	jQuery.ajax({
-//             type: "GET",
-//             url: auth_endpoint,
-//             async: false,
-//             username: "logmeout",
-//             password: "123456",
-//             headers: { "Authorization": "Basic xxx" }
-// 	})
-// 	.done(function(){
-// 	    // If we don't get an error, we actually got an error as we expect an 401!
-// 	})
-// 	.fail(function(){
-// 	    // We expect to get an 401 Unauthorized error! In this case we are successfully
-//             // logged out and we redirect the user.
-//         console.log("Logout success")
-//     });
-//
-//     return false;
-// }
+
+function auth_html() {
+    return `
+  <div class="grid__col grid__col--6-of-12 grid__col--centered">
+    <div class="login-form">
+        <input class="username" name="username" type="text" placeholder="User Name">
+        <input class="password" name="password" type="password" placeholder="Password">
+        <input type="button" value="Sign In" onclick="auth_sign_in(event);" />
+    </div>
+  </div>
+   `;
+}
+
+var g_authorization_header = localStorage.getItem('authorization_header');
+
+function auth_field_enter_key(ev, cb) {
+    if (e.keycode == 13) {
+        auth_sign_in()
+    }
+
+}
+
+function auth_sign_in(ev) {
+    var password_el = ev.target.previousElementSibling;
+    var user_el = password_el.previousElementSibling;
+    var user = user_el.value;
+    var password = password_el.value;
+    g_authorization_header = 'Basic ' + window.btoa(user + ":" + password);
+    localStorage.setItem('authorization_header', g_authorization_header);
+    // Call setups again
+    setup_files();
+    setup_upload();
+}
+
+function auth_logout() {
+    g_authorization_header = null;
+    localStorage.setItem('authorization_header', null);
+}
