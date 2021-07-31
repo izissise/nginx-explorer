@@ -31,8 +31,9 @@ docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v directo
 
 ## With basic auth
 ```
-
+docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v directoryToUploadTo:/home/user/uploads -v ../nginx-explorer/www:/var/www/files:ro -v ../nginx-explorer/nginx-conf/upload.conf:/etc/nginx/conf.d/default.conf:ro -v .../auth/download.htpasswd:/basic_auth/download.htpasswd -v .../auth/upload.htpasswd:/basic_auth/upload.htpasswd nginx
 ```
+
 
 ## Upload multipart support (nginx + lua)
 `nginx-conf/upload-multipart-lua.conf`
