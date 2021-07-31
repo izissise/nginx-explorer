@@ -15,11 +15,16 @@ function setup_upload() {
     server_upload_capa(upload_endpoint).then(function(upload_func) {
         if (upload_func === null) {
             document.querySelector('.file-upload').classList.add("hide");
-            return;
+        } else if (upload_func === auth_html) {
+            document.querySelector('.file-upload').classList.add("hide");
+            var auth_div = document.querySelector('.file-upload-auth');
+            auth_div.innerHTML = auth_button_html();
+            auth_div.classList.remove("hide");
+        } else {
+            // Server support upload
+            upload_activate_ui(upload_endpoint, upload_func);
         }
-        // Server support upload
-        upload_activate_ui(upload_endpoint, upload_func);
-    })
+    });
 }
 
 function upload_activate_ui(upload_endpoint, upload_func) {
@@ -32,7 +37,7 @@ function upload_activate_ui(upload_endpoint, upload_func) {
         document.querySelector('#upload-indicator').classList.remove("hide");
         if (file === undefined) { return; }
         //generate random long number for SessionID
-        var sessionID = Math.round(Math.pow(10,17)*Math.random());
+        var sessionID = Math.round(Math.pow(10, 17) * Math.random());
 
         if (!upload_func) {
             console.error("Handle upload func is null");
@@ -86,8 +91,9 @@ function server_upload_capa(endpoint) {
             return doUploadChunked;
         } else if (response.status == 404) {
             console.info("Server doesn't support upload");
-        } else if (response.status == 403) {
+        } else if (response.status == 403 || response.status == 401) {
             console.warn("Upload need auth");
+            return auth_html;
         } else {
             console.error(response);
         }

@@ -11,11 +11,23 @@ function auth_html() {
    `;
 }
 
+function auth_button_pressed(ev) {
+    var parent = ev.target.parentElement;
+    parent.innerHTML = auth_html();
+    parent.classList.remove("hide");
+}
+
+function auth_button_html() {
+    return `
+    <input type="button" value="🔐" onclick="auth_button_pressed(event);" />
+   `;
+}
+
 var g_authorization_header = localStorage.getItem('authorization_header');
 
 function auth_field_enter_key(ev, cb) {
     if (e.keycode == 13) {
-        auth_sign_in()
+        auth_sign_in();
     }
 
 }

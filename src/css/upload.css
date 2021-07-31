@@ -63,3 +63,10 @@
 	position: absolute;
 	z-index: -1;
 }
+
+.file-upload-auth {
+    z-index: 10;
+    position: absolute;
+    right: 5%;
+    top: 20;
+}
