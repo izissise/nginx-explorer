@@ -1,24 +1,25 @@
-function get(path) {
-  return new Promise(function(resolve, reject) {
-    var request = new XMLHttpRequest();
-    request.overrideMimeType("text/html; charset=ISO-8859-1");
-    // Handle network errors
-    request.onerror = function() {
-      reject(Error("Network Error"));
-    };
-    request.onreadystatechange = function() {
-        if (request.readyState === XMLHttpRequest.DONE) {
-          if (request.status >= 200 && request.status < 400) {
-              resolve(request.responseText);
-            } else {
-              reject(request);
-            }
-        }
-    };
+function onWindowLoad(callback) {
+      if(window.addEventListener){
+          window.addEventListener('load', callback, false);
+      }else{
+          window.attachEvent('onload', callback);
+      }
+}
 
-    request.open("GET", path, true);
-    request.send();
-  });
+function get(path) {
+  var headers = new Headers();
+  if (g_authorization_header !== undefined) {
+      headers.append('Authorization', g_authorization_header);
+  }
+  return fetch(path, {
+        credentials: 'omit', // Prevent display of default pop-up
+        headers: headers,
+    }).then(function(response) {
+        if (!response.ok) {
+            return Promise.reject(response);
+        }
+        return response;
+    });
 }
 
 Number.prototype.padLeft = function(base, chr){
