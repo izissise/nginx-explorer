@@ -1,6 +1,6 @@
 {
   "name": "nginx-explorer",
-  "version": "1.2.2",
+  "version": "2.0.0",
   "homepage": "https://github.com/izissise/nginx-explorer",
   "author": "Hugues Morisset <morisset.hugues@gmail.com>",
   "contributors": [
