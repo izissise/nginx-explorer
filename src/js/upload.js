@@ -80,13 +80,14 @@ function upload_activate_ui(upload_endpoint, upload_func) {
 function server_upload_capa(endpoint) {
     return get(endpoint).then(function (response) {
         // 200 <= status < 400
-
-        // If it returns contents, probably server doesn't support upload
-        if (response.text().length < 20) {
-            return doUploadRaw;
-        } else {
-            return null;
-        }
+        return response.text().then(function (body) {
+            // If it returns contents, probably server doesn't support upload
+            if (body.length < 20) {
+                return doUploadRaw;
+            } else {
+                return null;
+            }
+        });
     }, function (response) {
         if (response.status == 411) {
             return doUploadChunked;
