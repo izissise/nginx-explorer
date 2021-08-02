@@ -8,7 +8,7 @@ function onWindowLoad(callback) {
 
 function get(path) {
   var headers = new Headers();
-  if (g_authorization_header !== undefined) {
+  if (g_authorization_header !== undefined && g_authorization_header !== null) {
       headers.append('Authorization', g_authorization_header);
   }
   return fetch(path, {

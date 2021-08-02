@@ -81,13 +81,14 @@ function server_upload_capa(endpoint) {
     return get(endpoint).then(function (response) {
         // 200 <= status < 400
 
-        // If it returns contents there probably a filename collision with the endpoint
-        if (response.text().length == 0) {
+        // If it returns contents, probably server doesn't support upload
+        if (response.text().length < 20) {
             return doUploadRaw;
+        } else {
+            return null;
         }
     }, function (response) {
-        if (response.status == 200) {
-        } else if (response.status == 411) {
+        if (response.status == 411) {
             return doUploadChunked;
         } else if (response.status == 404) {
             console.info("Server doesn't support upload");
