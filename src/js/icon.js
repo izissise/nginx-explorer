@@ -99,7 +99,8 @@ IconMap = {
 };
 
 function iconFor(path, isDir) {
-  var iconImage = "<picture><source srcset='/icons/{0}.svg' type='image/svg+xml' height=24 class='fileicon'></picture>";
+//   var iconImage = "<picture><source srcset='/icons/{0}.svg' type='image/svg+xml' height=24 class='fileicon'></picture>";
+  var iconImage = "<img class='fileicon' src=\"/icons/{0}.svg\" type=\"image/svg+xml\" onerror=\"this.src='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='\" height=24 alt=''>";
   if (isDir) {
     return iconImage.format('folder');
   }

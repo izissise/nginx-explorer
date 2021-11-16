@@ -27,18 +27,6 @@ Number.prototype.padLeft = function(base, chr){
     return len > 0 ? new Array(len).join(chr || '0') + this : this;
 };
 
-function escapeHtml(text) {
-  var map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-
-  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
 function humanFileSize(bytes, si) {
     var thresh = si ? 1000 : 1024;
     if(Math.abs(bytes) < thresh) {
