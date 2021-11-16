@@ -122,13 +122,6 @@ function addSortValue(trs, api) {
 function formatNameField(tdName, tdType, baseUrl) {
    var name = tdName.innerHTML;
    var type = tdType.innerHTML;
-   name = escape(name);
-   name = name.replace(/\%C3\%u201A/g, 'Â');
-   name = name.replace(/\%C3\%u20AC/g, 'À');
-   name = name.replace(/\%C3\%u2021/g, 'Ç');
-   try {
-    name = decodeURIComponent(name);
-   } catch (e) {}
    tdName.setAttribute('data-sort', name); // Value used to sort
    if (type == "directory") {
      tdName.innerHTML = directoryfy(baseUrl, name);
@@ -179,14 +172,13 @@ function formatDateField(tdDate, now) {
 
 function directoryfy(base, data) {
   return ['<a href="javascript:void(0)" onclick=\'historyFileApp("',
-          escapeHtml(base), escapeHtml(data), '/")\'>',
+          encodeURI(base), encodeURIComponent(data), '/")\'>',
           iconFor(data, true), data, '</a>'
   ].join("");
 }
 
 function linkify(base, data) {
-  var name = escapeHtml(data);
-  return ['<a href="', escapeHtml(base), name, '" download="', name, '">',
+  return ['<a href="', encodeURI(base), encodeURIComponent(data), '" download="', data, '">',
          iconFor(data, false), data, '</a>'
   ].join("");
 }
