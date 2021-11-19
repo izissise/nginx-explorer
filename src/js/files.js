@@ -172,7 +172,7 @@ function formatDateField(tdDate, now) {
 
 function directoryfy(base, data) {
   return ['<a href="javascript:void(0)" onclick=\'historyFileApp("',
-          encodeURI(base), encodeURIComponent(data), '/")\'>',
+          base, data, '/")\'>',
           iconFor(data, true), data, '</a>'
   ].join("");
 }
