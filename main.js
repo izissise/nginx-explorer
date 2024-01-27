@@ -372,7 +372,7 @@ function setup_files() {
     sort_table(dom('#fthead'), dom('#ftbody'), 2, true); // default sort by date
 
     var wgetcode = el('div', { id: 'wget_code' }, [
-        el('code', { innerText: "wget -r -c --no-parent --reject 'index.html*' '{0}'".format(document.location) })
+        el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) })
     ], { 'class': 'form hide' });
     body.insertBefore(wgetcode, body.firstChild);
 
@@ -382,6 +382,7 @@ function setup_files() {
 
     // TODO gallery mode for image
     // TODO play in broswer for videos
+    // TODO set favicon and tab name
 }
 
 
