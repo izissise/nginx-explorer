@@ -44,7 +44,7 @@ fi
 
 htpasswd -cb upload.htpasswd upload aaaa
 
-podman run \
+docker run \
     --rm -it --log-driver=none \
     --user="$(id -u):$(id -g)" \
     --userns=keep-id --cap-drop=ALL \
@@ -52,8 +52,8 @@ podman run \
     --expose=8080 -p 8080:8080 \
     -v "$HOME/Downloads:/home/user/downloads:ro" \
     -v "$HOME/Downloads/receive:/home/user/uploads:rw" \
-    -v "${here}:/var/www/ngx_expl:ro" \
     -v "/tmp/nginx-explorer.conf:/etc/nginx/nginx.conf:ro" \
+    -v "${here}:/var/www/ngx_expl:ro" \
     -v "${here}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
     -v "${here}/upload.htpasswd:/basic_auth/upload.htpasswd:ro" \
     nginx

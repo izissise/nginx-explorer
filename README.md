@@ -2,40 +2,18 @@
 File explorer in javascript, web based
 using nginx for directory listing
 
+Support upload and basic auth
+
+Icons must be downloaded see `dev.sh`
+
+You can remove the upload and basic auth from the nginx conf and it will automatically disable it client side.
+
 ![example](https://raw.github.com/izissise/nginx-explorer/master/images/example.png "Example")
 
-## Build
-```
-git clone https://github.com/izissise/nginx-explorer.git
-cd nginx-explorer
-```
-
-You need npm:
-```
-npm install -g bower
-npm install
-npm run build
-```
 
 ## Quick launch with docker
 ```
-docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v .../nginx-explorer/www:/var/www/files:ro -v .../nginx-explorer/nginx-conf/simple-download.conf:/etc/nginx/conf.d/default.conf:ro nginx
+./dev.sh
 ```
-Go on 127.0.0.1 with you browser.
-
-
-## Upload
-```
-docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v directoryToUploadTo:/home/user/uploads -v ../nginx-explorer/www:/var/www/files:ro -v ../nginx-explorer/nginx-conf/upload.conf:/etc/nginx/conf.d/default.conf:ro nginx
-```
-
-## With basic auth
-```
-docker run --rm -it -p 80:80 -v directoryToServe:/home/user/downloads -v directoryToUploadTo:/home/user/uploads -v ../nginx-explorer/www:/var/www/files:ro -v ../nginx-explorer/nginx-conf/upload.conf:/etc/nginx/conf.d/default.conf:ro -v .../auth/download.htpasswd:/basic_auth/download.htpasswd -v .../auth/upload.htpasswd:/basic_auth/upload.htpasswd nginx
-```
-
-
-## Upload multipart support (nginx + lua)
-`nginx-conf/upload-multipart-lua.conf`
-https://github.com/pgaertig/nginx-big-upload
+Go to 127.0.0.1:8080 with you browser.
 
