@@ -44,7 +44,7 @@ fi
 
 htpasswd -cb upload.htpasswd upload aaaa
 
-docker run \
+podman run \
     --rm -it --log-driver=none \
     --user="$(id -u):$(id -g)" \
     --userns=keep-id --cap-drop=ALL \

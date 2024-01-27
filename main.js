@@ -380,15 +380,23 @@ function setup_files() {
     styleSheet.innerText = styles
     document.head.appendChild(styleSheet)
 
-    // TODO gallery mode for image
+    // TODO gallery mode for image, auto gallery mode if more than 80% images
     // TODO play in broswer for videos
-    // TODO set favicon and tab name
 }
 
 
 /* Menu */
 
+onWindowLoad(setup_page);
 onWindowLoad(setup_menu);
+
+function setup_page() {
+    var scripts = dom('script');
+    var name = scripts[scripts.length - 1].attributes['name'].value;
+    var favicon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEU0OkArMjhobHEoPUPFEBIuO0L+AAC2FBZ2JyuNICOfGx7xAwTjCAlCNTvVDA1aLzQ3COjMAAAAVUlEQVQI12NgwAaCDSA0888GCItjn0szWGBJTVoGSCjWs8TleQCQYV95evdxkFT8Kpe0PLDi5WfKd4LUsN5zS1sKFolt8bwAZrCaGqNYJAgFDEpQAAAzmxafI4vZWwAAAABJRU5ErkJggg=='; // scripts[scripts.length - 1].attributes['favicon'].value;
+    document.title = '{0} {1}'.format(name, document.location.pathname);
+    document.head.appendChild(el('link', { rel: 'shortcut icon', href: favicon, size: '16x16', type: 'image/ico' }));
+}
 
 function setup_menu() {
     var body = dom('body')[0];
