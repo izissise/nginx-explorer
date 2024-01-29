@@ -42,9 +42,13 @@ if [[ ! -d "${here}/icons" ]]; then
     && \rm -f /tmp/breeze-icons.tar.gz
 fi
 
-htpasswd -cb upload.htpasswd upload aaaa
+htpasswd -cb upload.htpasswd upload pass
 
-podman run \
+driver=docker
+if command -v podman &>/dev/null; then
+    driver=podman
+fi
+"$driver" run \
     --rm -it --log-driver=none \
     --user="$(id -u):$(id -g)" \
     --userns=keep-id --cap-drop=ALL \

@@ -69,8 +69,7 @@ table, .form, form {
     -moz-box-shadow: 0 0 4px rgba(0, 0, 0, .1);
     box-shadow: 0 0 4px rgba(0, 0, 0, .1)
     display: block;
-    margin-left: auto;
-    margin-right: auto;
+    margin-inline: auto;
     width: 83.33333%;
 }
 table td,
@@ -155,6 +154,12 @@ a, a:visited {
 }
 
 /* Menu */
+:root {
+  accent-color: mediumvioletred;
+}
+.form, form {
+    width: fit-content;
+}
 input {
     margin: 2px;
 }
@@ -382,6 +387,8 @@ function setup_files() {
 
     // TODO gallery mode for image, auto gallery mode if more than 80% images
     // TODO play in broswer for videos
+    // TODO support infinite upload size by sending dividing file in chunks
+    // TODO test - download html file / uploads folder/ _ngx_expl folder
 }
 
 
@@ -393,9 +400,15 @@ onWindowLoad(setup_menu);
 function setup_page() {
     var scripts = dom('script');
     var name = scripts[scripts.length - 1].attributes['name'].value;
-    var favicon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEU0OkArMjhobHEoPUPFEBIuO0L+AAC2FBZ2JyuNICOfGx7xAwTjCAlCNTvVDA1aLzQ3COjMAAAAVUlEQVQI12NgwAaCDSA0888GCItjn0szWGBJTVoGSCjWs8TleQCQYV95evdxkFT8Kpe0PLDi5WfKd4LUsN5zS1sKFolt8bwAZrCaGqNYJAgFDEpQAAAzmxafI4vZWwAAAABJRU5ErkJggg=='; // scripts[scripts.length - 1].attributes['favicon'].value;
     document.title = '{0} {1}'.format(name, document.location.pathname);
-    document.head.appendChild(el('link', { rel: 'shortcut icon', href: favicon, size: '16x16', type: 'image/ico' }));
+
+    var favicon = scripts[scripts.length - 1].attributes['favicon'].value;
+    var canvas = el('canvas', { height: 24, width: 24 });
+    var ctx = canvas.getContext('2d');
+    ctx.font = '24px serif';
+    console.log(favicon);
+    ctx.fillText(favicon, 0, 24);
+    document.head.appendChild(el('link', { rel: 'shortcut icon', href: canvas.toDataURL(), size: '24x24', type: 'image/ico' }));
 }
 
 function setup_menu() {
@@ -533,7 +546,7 @@ function setup_upload() {
                 el('thead', { id: 'fthead' }, ['Filename', 'Progress'].map((f) => el('th', { innerText: f }))),
                 el('tbody', { id: 'ftbody' }),
             ], { 'class': 'hide' }),
-        ], { 'class': 'form hide' });
+        ], { 'class': 'hide' });
         body.insertBefore(updiv, body.firstChild);
     });
 }
