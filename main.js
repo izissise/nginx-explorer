@@ -388,7 +388,6 @@ function setup_files() {
     // TODO gallery mode for image, auto gallery mode if more than 80% images
     // TODO play in broswer for videos
     // TODO support infinite upload size by sending dividing file in chunks
-    // TODO test - download html file / uploads folder/ _ngx_expl folder
 }
 
 
