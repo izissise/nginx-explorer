@@ -391,6 +391,7 @@ function setup_files() {
 
     // TODO gallery mode for image, auto gallery mode if more than 80% images
     // TODO play in browser for videos
+    // TODO proba sort and ui
 }
 
 
@@ -548,15 +549,46 @@ function setup_upload() {
     });
 }
 
+function uploade_etc_and_speed(now, transfer_size, transferred_size, last_transferred_date, last_transferred_size) {
+    var estimate_to_completion = null;
+    var speed = null;
+    var duration = now - last_transferred_date;
+    if (duration != 0.0) {
+        speed = (transferred_size - last_transferred_size) / duration;
+        if (speed != 0) {
+            estimate_to_completion = (transfer_size - transferred_size) / speed;
+        }
+    }
+    return estimate_to_completion, speed
+}
+
 function upload_start(ev) {
     if (upload_func === null) {
         console.error("Handle upload func is null");
         return;
     }
 
-    var up_progress = ([progress, upprogress]) => {
-        // TODO eta
-        upprogress.children[0].value = Math.floor(progress * 100);
+    var up_progress = ([e, upprogress]) => {
+        var ftotal = e.total == 0 ? 1 : e.total;
+        var floaded = e.loaded == 0 ? 1 : e.loaded;
+        var perc = Math.floor((floaded / ftotal) * 100);
+        var etc = null;
+        var speed = null;
+        var bar = upprogress.children[0];
+        var last_transferred_date = bar.dataset.lasttransferreddate;
+        if (last_transferred_date === undefined) {
+            last_transferred_date = e.timeStamp;
+        }
+        var last_transferred_size = bar.dataset.lasttransferredsize;
+        if (last_transferred_size === undefined) {
+            last_transferred_size = 0;
+        }
+        var duration = e.timeStamp - last_transferred_date;
+        etc, speed = uploade_etc_and_speed(e.timeStamp / 1000, ftotal, floaded, last_transferred_date, last_transferred_size);
+        console.log("{0}%, transferred {1}MiB/{2}MiB, {3}MiB/S in the last {4}s should finish in {5} seconds".format(perc, (floaded / (1024 * 1024)).toFixed(1), (ftotal / (1024 * 1024)).toFixed(1), (speed / (1024 * 1024)).toFixed(1), (duration / 1000).toFixed(1), (etc / 1000).toFixed(0)));
+        bar.value = perc;
+        bar.dataset.lasttransferreddate = e.timeStamp;
+        bar.dataset.lasttransferredsize = floaded;
     };
     var up_success = ([xhr, upprogress]) => {
         console.log('Success - server responded with:', xhr.responseText);
@@ -675,14 +707,14 @@ function upload_raw(url, extraParams, sessionID, file, progress, cb_data) {
 
         xhr.upload.addEventListener('progress', (e) => {
             if (aborting) { return; }
-            progress([e.loaded / e.total, cb_data]);
+            progress([e, cb_data]);
         });
         xhr.addEventListener('load', (ev) => {
             var xhr = ev.target;
             if (aborting) { return; }
             if (xhr.readyState >= 4) {
                 if (xhr.status >= 200 && xhr.status <= 299) {
-                    progress([1, cb_data]);
+                    progress([ev, cb_data]);
                     resolve([xhr, cb_data])
                 } else {
                     try {
