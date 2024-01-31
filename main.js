@@ -166,7 +166,7 @@ input {
 #menu {
     position: absolute;
     margin-top: 3px;
-    margin-left: 17px;
+    margin-left: 10px;
 }
 input[type="button"]:disabled,
 input[type="submit"]:disabled,
@@ -195,16 +195,6 @@ onWindowLoad(setup_menu);
 onWindowLoad(setup_page);
 onWindowLoad(setup_upload);
 onWindowLoad(setup_auth_html);
-if (document.readyState == 'complete') {
-    (setTimeout(() => media_actions(), 200))();
-} else {
-    var called = false;
-    document.onreadystatechange = () => {
-        if (called) { return; }
-        setTimeout(() => media_actions(), 200);
-        called = true;
-    };
-}
 
 function el(tag, props, ch, attrs) {
     var n = Object.assign(document.createElement(tag), (props === undefined) ? {} : props);
@@ -445,8 +435,10 @@ function setup_files() {
 
 /* Media */
 
+var media_action_called = false;
 function media_actions() {
-    // retrieve table
+    if (media_action_called) { return; }
+    media_action_called = true;
     var tbodies = dom('#ftbody');
     for (j = 0; j < tbodies.length; j++) {
         var tbody = tbodies[j];
@@ -519,6 +511,7 @@ function setup_menu() {
         el('input', { type: 'button', value: "💾" }, [], { 'onclick': 'menu_toggle(event, "wget_code");' }),
         el('input', { type: 'button', value: "🔐" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
         el('input', { type: 'button', value: "📤" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
+        el('input', { type: 'button', value: "🛋️" }, [], { 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
     ]);
     body.insertBefore(logform, body.firstChild);
 }
