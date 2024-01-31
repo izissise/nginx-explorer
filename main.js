@@ -170,6 +170,20 @@ input {
 }
 `
 
+function onWindowLoad(callback) {
+    if (window.addEventListener) {
+        window.addEventListener('load', callback, false);
+    } else {
+        window.attachEvent('onload', callback);
+    }
+}
+
+onWindowLoad(setup_files);
+onWindowLoad(setup_menu);
+onWindowLoad(setup_page);
+onWindowLoad(setup_upload);
+onWindowLoad(setup_auth_html);
+
 function el(tag, props, ch, attrs) {
     var n = Object.assign(document.createElement(tag), (props === undefined) ? {} : props);
     var child = (ch === undefined) ? [] : ch;
@@ -181,14 +195,6 @@ function el(tag, props, ch, attrs) {
 
 function dom(select) {
     return document.querySelectorAll(select);
-}
-
-function onWindowLoad(callback) {
-    if (window.addEventListener) {
-        window.addEventListener('load', callback, false);
-    } else {
-        window.attachEvent('onload', callback);
-    }
 }
 
 Number.prototype.padLeft = function(base, chr) {
@@ -334,8 +340,6 @@ function sort_table(theads, tbodies, column, descending) {
     }
 }
 
-onWindowLoad(setup_files);
-
 var icon_base = null;
 
 function setup_files() {
@@ -386,15 +390,11 @@ function setup_files() {
     document.head.appendChild(styleSheet)
 
     // TODO gallery mode for image, auto gallery mode if more than 80% images
-    // TODO play in broswer for videos
-    // TODO support infinite upload size by sending dividing file in chunks
+    // TODO play in browser for videos
 }
 
 
 /* Menu */
-
-onWindowLoad(setup_page);
-onWindowLoad(setup_menu);
 
 function setup_page() {
     var scripts = dom('script');
@@ -405,7 +405,6 @@ function setup_page() {
     var canvas = el('canvas', { height: 24, width: 24 });
     var ctx = canvas.getContext('2d');
     ctx.font = '24px serif';
-    console.log(favicon);
     ctx.fillText(favicon, 0, 24);
     document.head.appendChild(el('link', { rel: 'shortcut icon', href: canvas.toDataURL(), size: '24x24', type: 'image/ico' }));
 }
@@ -447,8 +446,6 @@ function menu_toggle(_ev, id) {
 
 var g_authorization_header = localStorage.getItem('authorization_header');
 
-onWindowLoad(setup_auth_html);
-
 function setup_auth_html() { // called if auth is needed
     var body = dom('body')[0];
     var logform = el('form', { id: 'auth_form' }, [
@@ -485,10 +482,10 @@ function auth_logout(ev) {
 
 
 /* UPLOAD */
-onWindowLoad(setup_upload);
 
 var upload_func = null;
 var upload_endpoint = null;
+var upload_max_size = null;
 
 function setup_upload() {
     // Feature detection for required features
@@ -497,6 +494,7 @@ function setup_upload() {
         return;
     }
     var scripts = dom('script');
+    upload_max_size = scripts[scripts.length - 1].attributes['upload-max-size'].value;
     upload_endpoint = scripts[scripts.length - 1].attributes['upload'].value;
     if (upload_endpoint === null || upload_endpoint === undefined) {
         return;
@@ -556,15 +554,16 @@ function upload_start(ev) {
         return;
     }
 
-    var up_progress = (progress, upprogress) => {
+    var up_progress = ([progress, upprogress]) => {
+        // TODO eta
         upprogress.children[0].value = Math.floor(progress * 100);
     };
-    var up_success = (responseText, upprogress) => {
-        console.log('Success - server responded with:', responseText);
+    var up_success = ([xhr, upprogress]) => {
+        console.log('Success - server responded with:', xhr.responseText);
         upprogress.children[1].innerText = '\u2713';
     };
-    var up_error = (errorText, upprogress) => {
-        console.error('A server error occurred:', errorText); // Could retry at this stage depending on xhr.status
+    var up_error = ([xhr, upprogress]) => {
+        console.error('A server error occurred:', xhr.responseText); // Could retry at this stage depending on xhr.status
         upprogress.children[1].innerText = '\u274C';
     };
 
@@ -573,7 +572,7 @@ function upload_start(ev) {
     table.classList.remove("hide");
     var file = form.children[0];
     Array.from(file.files).forEach((f) => {
-        var upprogress = el('span', {}, [
+        var up_progress_el = el('span', {}, [
             el('progress', { max: 100, value: 0 }),
             el('span', { innerText: '◌' }),
         ]);
@@ -582,83 +581,126 @@ function upload_start(ev) {
                 icontag(icon_base, f.type),
                 el('span', { innerText: f.name }),
             ]),
-            el('td', {}, [upprogress]),
+            el('td', {}, [up_progress_el]),
         ]);
         table.appendChild(upentry);
 
+        var chunk_cnt = 1;
+        var chunk_size = f.size;
+        var chunk_last_size = 0;
+        if (upload_max_size > 0 && f.size > upload_max_size) {
+            // upload in chunks
+            chunk_cnt = Math.ceil(f.size / upload_max_size);
+            chunk_size = Math.floor(f.size / chunk_cnt);
+            if ((chunk_cnt * chunk_size) < f.size) {
+                chunk_last_size = f.size - (chunk_cnt * chunk_size);
+                chunk_cnt += 1;
+            }
+            console.log('Chunked upload -> Filesize: {0} ChunkCnt: {1} ChunkSz: {2} ChunkLastSz: {3}'.format(f.size, chunk_cnt, chunk_size, chunk_last_size));
+        }
+
         // first upload meta file
-        var meta = "uploadmeta_size='{0}' && uploadmeta_name='{1}' && printf -v uploadmeta_name '%b' \"${uploadmeta_name//\\%/\\\\x}\" && uploadmeta_type='{2}'".format(f.size, encodeURIComponent(f.name), f.type);
-        meta += '\n# Fixup command\n# find ./ -type f | while read -r i; do if [ ! -f "$i" ]; then continue; fi && read -r -n 10 head < "$i" && if [ "$head" == "uploadmeta" ]; then source "$i" && find ./ -type f -size "$uploadmeta_size"c -exec mv {} "$uploadmeta_name" \\; ; fi; done\n';
+        // /!\ /!\ /!\ conversion function should be
+        // kept on server to avoid RCE from users
+        var fixupcmd = 'find ./ -type f'; // find all files in current folder
+        fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
+        fixupcmd += ' && read -r -n 12 head < "$i" && if [ "$head" != "#upload_meta" ]; then continue; fi';
+        fixupcmd += ' && name="$(grep -v "#" "$i" | jq -r ".name")"'; // get name
+        fixupcmd += ' && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c'; // find all files that are $chunk_sz in size
+        fixupcmd += ' | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done'; // only keep the one with a higher id
+        fixupcmd += ' | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")"'; // sort them and keep $chunk_cnt
+        fixupcmd += ' | while read -r f; do cat "$f" >> "$name" && rm -f "$f"; done && rm -f "$i"; done'; // concatenate
+        var meta = "#upload_meta\n" + JSON.stringify({
+            'name': f.name,
+            'size': f.size,
+            'type': f.type,
+            'chunk_cnt': chunk_cnt,
+            'chunk_size': chunk_size,
+            'chunk_last_size': chunk_last_size,
+        }) + '\n';
+        meta += '# Fixup command\n# ' + fixupcmd + '\n';
         upload_func(upload_endpoint, '',
             Math.round(Math.pow(10, 17) * Math.random()), // generate random long number for SessionID
-            meta, up_progress, (_resp, upprogress) => {
-                // meta upload success, start real upload
-                upprogress.children[1].innerText = '◌'; // reset indicator
-                upload_func(upload_endpoint, '',
-                    Math.round(Math.pow(10, 17) * Math.random()), // generate random long number for SessionID
-                    f, up_progress, up_success, up_error, upprogress,
-                );
-            }, up_error, upprogress,
-        );
+            meta, up_progress, up_progress_el,
+        ).then(([_xhr, up_progress_el]) => {
+            // meta upload success, start real upload
+            var seeker = 0;
+            up_progress_el.children[1].innerText = '◌';
+            var promise_chain = Promise.resolve(([null, up_progress_el]));
+            for (var i = 0; i < chunk_cnt; i++) {
+                let chunk_txt = '◌';
+                if (chunk_cnt > 1) {
+                    chunk_txt = '{0}/{1}'.format(i + 1, chunk_cnt);
+                }
+                var chsz = chunk_size;
+                if ((seeker + chsz) > f.size) {
+                    chsz = chunk_last_size;
+                }
+                let chunk = f.slice(seeker, seeker + chsz);
+                seeker += chsz;
+                promise_chain = promise_chain.then(([_xhr, up_progress_el]) => {
+                    up_progress_el.children[1].innerText = chunk_txt;
+                    return upload_func(upload_endpoint, '',
+                        Math.round(Math.pow(10, 17) * Math.random()), // generate random long number for SessionID
+                        chunk, up_progress, up_progress_el
+                    );
+                });
+            }
+            promise_chain.then(up_success);
+        }, up_error);
 
     });
     form.reset();
 }
 
-function upload_raw(url, extraParams, sessionID, file, progress, success, error, cb_data) {
-    aborting = false;
-    xhr = new XMLHttpRequest();
-    if (extraParams) {
-        xhr.open('POST', url + (url.indexOf('?') > -1 ? '&' : '?') + extraParams, true);
-    } else {
-        xhr.open('POST', url, true);
-    }
-    var headers = {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': 'attachment; filename="{0}"'.format(encodeURIComponent(file.name)),
-        'X-Content-Range': 'bytes 0-{0}/{1}'.format(file.size - 1, file.size),
-        'X-Session-ID': sessionID,
-    };
-    if (g_authorization_header !== undefined) {
-        headers['Authorization'] = g_authorization_header;
-    }
-    xhr = Object.entries(headers).reduce((xhr, [k, v]) => { xhr.setRequestHeader(k, v); return xhr; }, xhr);
-
-    xhr.upload.addEventListener('progress', (e) => {
-        if (aborting) { return; }
-        progress(e.loaded / e.total, cb_data);
-    });
-    xhr.addEventListener('load', (ev) => {
-        var xhr = ev.target;
-        if (aborting) { return; }
-        if (xhr.readyState >= 4) {
-            if (xhr.status >= 200 && xhr.status <= 299) {
-                progress(1, cb_data);
-                success(xhr.responseText, cb_data);
-            } else {
-                try {
-                    xhr.abort();
-                } catch (err) { }
-                error(xhr.responseText, cb_data);
-            }
+function upload_raw(url, extraParams, sessionID, file, progress, cb_data) {
+    return new Promise((resolve, reject) => {
+        aborting = false;
+        xhr = new XMLHttpRequest();
+        if (extraParams) {
+            xhr.open('POST', url + (url.indexOf('?') > -1 ? '&' : '?') + extraParams, true);
+        } else {
+            xhr.open('POST', url, true);
         }
-    });
+        var headers = {
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': 'attachment; filename="{0}"'.format(encodeURIComponent(file.name)),
+            'X-Content-Range': 'bytes 0-{0}/{1}'.format(file.size - 1, file.size),
+            'X-Session-ID': sessionID,
+        };
+        if (g_authorization_header !== undefined) {
+            headers['Authorization'] = g_authorization_header;
+        }
+        xhr = Object.entries(headers).reduce((xhr, [k, v]) => { xhr.setRequestHeader(k, v); return xhr; }, xhr);
 
-    xhr.addEventListener('error', (ev) => {
-        var xhr = ev.target;
-        if (aborting) { return; }
-        try {
-            xhr.abort();
-        } catch (err) { }
-        error(xhr.responseText, cb_data);
-    });
-    xhr.send(file);
-    return {
-        abort: () => {
-            aborting = true;
+        xhr.upload.addEventListener('progress', (e) => {
+            if (aborting) { return; }
+            progress([e.loaded / e.total, cb_data]);
+        });
+        xhr.addEventListener('load', (ev) => {
+            var xhr = ev.target;
+            if (aborting) { return; }
+            if (xhr.readyState >= 4) {
+                if (xhr.status >= 200 && xhr.status <= 299) {
+                    progress([1, cb_data]);
+                    resolve([xhr, cb_data])
+                } else {
+                    try {
+                        xhr.abort();
+                    } catch (err) { }
+                    reject([xhr, cb_data])
+                }
+            }
+        });
+
+        xhr.addEventListener('error', (ev) => {
+            var xhr = ev.target;
+            if (aborting) { return; }
             try {
                 xhr.abort();
             } catch (err) { }
-        },
-    };
+            reject([xhr, cb_data])
+        });
+        xhr.send(file);
+    });
 }
