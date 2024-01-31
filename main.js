@@ -168,6 +168,18 @@ input {
     margin-top: 3px;
     margin-left: 17px;
 }
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+button:disabled,
+button[disabled] {
+    background: repeating-linear-gradient(
+        45deg,
+        #999999,
+        #cccccc 3px,
+        #666666 4px,
+        #55557f 5px
+    );
+}
 `
 
 function onWindowLoad(callback) {
@@ -183,6 +195,16 @@ onWindowLoad(setup_menu);
 onWindowLoad(setup_page);
 onWindowLoad(setup_upload);
 onWindowLoad(setup_auth_html);
+if (document.readyState == 'complete') {
+    (setTimeout(() => media_actions(), 200))();
+} else {
+    var called = false;
+    document.onreadystatechange = () => {
+        if (called) { return; }
+        setTimeout(() => media_actions(), 200);
+        called = true;
+    };
+}
 
 function el(tag, props, ch, attrs) {
     var n = Object.assign(document.createElement(tag), (props === undefined) ? {} : props);
@@ -225,7 +247,7 @@ function humanFileSize(bytes, si) {
 }
 
 IconMap = {
-    '7z': 'application-x-7z-compressed', 'aac': 'audio-x-generic', 'apk': 'android-package-archive', 'apng': 'image-png', 'atom': 'application-atom+xml', 'avi': 'audio-x-generic', 'bash': 'application-x-executable-script', 'bmp': 'image-bmp', 'c': 'text-x-csrc', 'cfg': 'text-x-generic', 'coffee': 'application-x-javascript', 'conf': 'text-x-generic', 'cpp': 'text-x-c++src', 'csh': 'application-x-executable-script', 'css': 'text-css', 'csv': 'text-csv', 'db': 'application-vnd.oasis.opendocument.database', 'deb': 'application-x-deb', 'desktop': 'application-x-desktop', 'doc': 'x-office-document', 'docx': 'x-office-document', 'eml': 'message-rfc822', 'epub': 'application-epub+zip', 'erb': 'application-x-ruby', 'ex': 'text-x-generic', 'exe': 'application-x-executable', 'fla': 'video-x-generic', 'flac': 'audio-x-flac', 'flv': 'video-x-generic', 'gif': 'image-gif', 'gml': 'text-xml', 'go': 'text-x-generic', 'gpx': 'text-xml', 'gz': 'application-x-gzip', 'h': 'text-x-chdr', 'hxx': 'text-x-c++hdr', 'hs': 'text-x-haskell', 'htm': 'text-html', 'html': 'text-html', 'ico': 'image-x-ico', 'ini': 'text-x-generic', 'iso': 'application-x-cd-image', 'jar': 'application-x-java-archive', 'java': 'application-x-java', 'jpeg': 'image-jpeg', 'jpg': 'image-jpeg', 'js': 'application-x-javascript', 'log': 'text-x-generic', 'lua': 'text-x-generic', 'm3u': 'audio-x-generic', 'markdown': 'text-x-generic', 'md': 'text-x-generic', 'mkv': 'video-x-matroska', 'mp3': 'audio-x-mpeg', 'mp4': 'video-mp4', 'odp': 'x-office-presentation', 'ods': 'x-office-spreadsheet', 'odt': 'x-office-document', 'ogg': 'audio-x-generic', 'otf': 'application-x-font-otf', 'pdf': 'application-pdf', 'pgp': 'application-pgp', 'php': 'application-x-php', 'pkg': 'package-x-generic', 'pl': 'application-x-perl', 'png': 'image-png', 'ppt': 'x-office-presentation', 'pptx': 'x-office-presentation', 'psd': 'image-x-psd', 'py': 'text-x-generic', 'pyc': 'application-x-python-bytecode', 'rar': 'application-x-rar', 'rb': 'application-x-ruby', 'rpm': 'application-x-rpm', 'rtf': 'text-rtf', 'sh': 'application-x-executable-script', 'svg': 'image-svg+xml-compressed', 'svgz': 'image-svg+xml-compressed', 'swf': 'application-x-shockwave-flash', 'tar': 'application-x-tar', 'text': 'text-x-generic', 'tiff': 'image-tiff', 'ttf': 'application-x-font-ttf', 'txt': 'text-x-generic', 'wav': 'audio-x-wav', 'webm': 'video-webm', 'wmv': 'video-x-wmv', 'xcf': 'image-x-xcf', 'xhtml': 'text-html', 'xls': 'x-office-spreadsheet', 'xlsx': 'x-office-spreadsheet', 'xml': 'text-xml', 'xpi': 'package-x-generic', 'xz': 'application-x-lzma-compressed-tar', 'zip': 'application-zip', 'zsh': 'application-x-executable-script', 'opml': 'text-xml',
+    '7z': 'application-x-7z-compressed', 'aac': 'audio-x-generic', 'apk': 'android-package-archive', 'apng': 'image-png', 'atom': 'application-atom+xml', 'avi': 'audio-x-generic', 'bash': 'application-x-executable-script', 'bmp': 'image-bmp', 'c': 'text-x-csrc', 'cfg': 'text-x-generic', 'coffee': 'application-x-javascript', 'conf': 'text-x-generic', 'cpp': 'text-x-c++src', 'csh': 'application-x-executable-script', 'css': 'text-css', 'csv': 'text-csv', 'db': 'application-vnd.oasis.opendocument.database', 'deb': 'application-x-deb', 'desktop': 'application-x-desktop', 'doc': 'x-office-document', 'docx': 'x-office-document', 'eml': 'message-rfc822', 'epub': 'application-epub+zip', 'erb': 'application-x-ruby', 'ex': 'text-x-generic', 'exe': 'application-x-executable', 'fla': 'video-x-generic', 'flac': 'audio-x-flac', 'flv': 'video-x-generic', 'gif': 'image-gif', 'gml': 'text-xml', 'go': 'text-x-generic', 'gpx': 'text-xml', 'gz': 'application-x-gzip', 'h': 'text-x-chdr', 'hxx': 'text-x-c++hdr', 'hs': 'text-x-haskell', 'htm': 'text-html', 'html': 'text-html', 'ico': 'image-x-ico', 'ini': 'text-x-generic', 'iso': 'application-x-cd-image', 'jar': 'application-x-java-archive', 'java': 'application-x-java', 'jpeg': 'image-jpeg', 'jpg': 'image-jpeg', 'js': 'application-x-javascript', 'log': 'text-x-generic', 'lua': 'text-x-generic', 'm3u': 'audio-x-generic', 'markdown': 'text-x-generic', 'md': 'text-x-generic', 'mkv': 'video-x-matroska', 'mp3': 'audio-x-mpeg', 'mp4': 'video-mp4', 'odp': 'x-office-presentation', 'ods': 'x-office-spreadsheet', 'odt': 'x-office-document', 'ogg': 'audio-x-generic', 'otf': 'application-x-font-otf', 'pdf': 'application-pdf', 'pgp': 'application-pgp', 'php': 'application-x-php', 'pkg': 'package-x-generic', 'pl': 'application-x-perl', 'png': 'image-png', 'ppt': 'x-office-presentation', 'pptx': 'x-office-presentation', 'psd': 'image-x-psd', 'py': 'text-x-generic', 'pyc': 'application-x-python-bytecode', 'rar': 'application-x-rar', 'rb': 'application-x-ruby', 'rpm': 'application-x-rpm', 'rtf': 'text-rtf', 'sh': 'application-x-executable-script', 'svg': 'image-svg+xml-compressed', 'svgz': 'image-svg+xml-compressed', 'swf': 'application-x-shockwave-flash', 'tar': 'application-x-tar', 'text': 'text-x-generic', 'tiff': 'image-tiff', 'ttf': 'application-x-font-ttf', 'txt': 'text-x-generic', 'wav': 'audio-x-wav', 'webm': 'video-webm', 'wmv': 'video-x-wmv', 'xcf': 'image-x-xcf', 'xhtml': 'text-html', 'xls': 'x-office-spreadsheet', 'xlsx': 'x-office-spreadsheet', 'xml': 'text-xml', 'xpi': 'package-x-generic', 'xz': 'application-x-lzma-compressed-tar', 'zip': 'application-zip', 'zsh': 'application-x-executable-script', 'opml': 'text-xml', '.': 'folder',
 };
 
 function icontag(icon_base, icon) {
@@ -240,15 +262,10 @@ function icontag(icon_base, icon) {
     });
 }
 
-function iconFor(icon_base, path) {
+function iconFor(icon_base, ext) {
     var icon = 'application-octet-stream';
-    if (path.endsWith('/')) {
-        icon = 'folder';
-    } else {
-        var extension = path.slice(path.lastIndexOf('.') + 1);
-        if (IconMap[extension] !== undefined) {
-            icon = IconMap[extension];
-        }
+    if (IconMap[ext] !== undefined) {
+        icon = IconMap[ext];
     }
     if (icon_base === null) {
         return el('div');
@@ -256,12 +273,21 @@ function iconFor(icon_base, path) {
     return icontag(icon_base, icon);
 }
 
-var format_name = (name, link, icon_base) => el('td', {}, [
-    el('a', { href: link, ...(link.endsWith('/') ? {} : { download: name }) }, [
-        iconFor(icon_base, link),
+function file_ext(path) {
+    if (path.endsWith('/')) {
+        return '.';
+    }
+    return path.slice(path.lastIndexOf('.') + 1).toLowerCase();
+}
+
+var format_name = (name, link, icon_base) => {
+    var fileext = file_ext(link);
+    var link = el('a', { href: link, ...(link.endsWith('/') ? {} : { download: name }) }, [
+        iconFor(icon_base, fileext),
         el('span', { innerText: name }),
-    ])
-], { 'data-sort': link });
+    ]);
+    return el('td', {}, [link], { 'data-sort': link });
+};
 var format_size = (size) => el('td', {
     innerText: (size == 0) ? '-' : humanFileSize(size, false)
 }, [], { 'data-sort': size });
@@ -360,10 +386,8 @@ function setup_files() {
         entry = entry[1].trim().split(/\s+/);
         var date = new Date(entry[0] + ' ' + entry[1]).getTime();;
         var size = (entry[2] == '-') ? 0 : parseInt(entry[2]);
-        if (!link.endsWith('/') && link.lastIndexOf('.') > 0) {
-            var ext = link.slice(link.lastIndexOf('.') + 1).toLowerCase();
-            fext_cnt[ext] = (fext_cnt[ext] ? fext_cnt[ext] : 0) + 1;
-        }
+        var ext = file_ext(link);
+        fext_cnt[ext] = (fext_cnt[ext] ? fext_cnt[ext] : 0) + 1;
         return [name, link, size, date];
     }).map((data) => el('tr', {}, [
         format_name(data[0], data[1], icon_base),
@@ -384,19 +408,19 @@ function setup_files() {
     while (body.hasChildNodes()) { body.removeChild(body.lastChild); }
     body.appendChild(table);
 
-    var getcnt = (key) => fext_cnt[key] ? fext_cnt[key] : 0;
+    var getcnt = (list) => list.reduce((acc, key) => acc + (fext_cnt[key] ? fext_cnt[key] : 0));
     var uitype = 'default';
     var fcount = entries.length;
-    var vids = (getcnt('mkv') + getcnt('avi') + getcnt('webm') + getcnt('mov') + getcnt('mp4'));
-    var imgs = (getcnt('gif') + getcnt('png') + getcnt('jpeg') + getcnt('jpg') + getcnt('tiff') + getcnt('bpm'));
-    var audios = (getcnt('mp3') + getcnt('wav') + getcnt('ogg') + getcnt('aac'));
+    var vids = getcnt(['mkv', 'avi', 'webm', 'mov', 'mp4', 'ogg']);
+    var imgs = getcnt(['gif', 'png', 'jpeg', 'jpg', 'tiff', 'bpm']);
+    var audios = getcnt(['mp3', 'wav', 'ogg', 'aac']);
     if ((imgs / fcount) > 0.8) {
         uitype = 'photo_gallery';
     } else if ((vids / fcount) > 0.82) {
         uitype = 'tvshow_season';
     } else if ((audios / fcount) > 0.82) {
         uitype = 'podcast_season';
-    } else if (vids == 1 && ((fcount < 6) || (fext_cnt['nfo'] > 0))) {
+    } else if (vids == 1 && ((fcount < 6) || (getcnt(['nfo']) > 0))) {
         uitype = 'tvshow_episode';
     }
     var uitype_func = {
@@ -416,10 +440,63 @@ function setup_files() {
     var styleSheet = document.createElement("style")
     styleSheet.innerText = styles
     document.head.appendChild(styleSheet)
-
-    // TODO play in browser for videos
 }
 
+
+/* Media */
+
+function media_actions() {
+    // retrieve table
+    var tbodies = dom('#ftbody');
+    for (j = 0; j < tbodies.length; j++) {
+        var tbody = tbodies[j];
+        if (tbody.rows.length == 0) {
+            continue;
+        }
+        Array.from(tbody.rows).forEach((tr) => {
+            var link = tr.cells[0].dataset.sort;
+            var media = format_media_el(link);
+            if (media !== null) {
+                tr.cells[0].appendChild(media);
+            }
+        });
+    }
+}
+
+function format_media_el(link) {
+    var fileext = file_ext(link);
+    if (['gif', 'png', 'jpeg', 'jpg', 'tiff', 'bpm'].includes(fileext)) {
+        var img = el('span', {}, [
+            el('input', { type: 'button', value: "🖼️" }, [], { 'onclick': 'event.target.nextSibling.src = event.target.nextSibling.dataset.src; el_hide_toggle(event.target.nextSibling);' }),
+            el('img', { width: '320', }, [], { 'class': 'hide', 'data-src': link })
+        ]);
+        return img;
+    } else if (['mkv', 'avi', 'webm', 'mov', 'mp4', 'ogg'].includes(fileext)) {
+        var videotype = 'video/{0}'.format(fileext);
+        if (videotype == 'video/mkv') {
+            videotype = 'video/x-matroska';
+        }
+        if (videotype == 'video/avi') {
+            videotype = 'video/divx';
+        }
+        var vid = el('span', {}, [
+            el('input', { type: 'button', value: "📽️" }, [], { 'onclick': 'el_hide_toggle(event.target.nextSibling);' }),
+            el('video', { width: '320', height: '240', controls: 'controls', preload: 'none' }, [
+                el('source', { src: link, type: videotype }, [], { 'onerror': 'event.target.parentNode.previousSibling.disabled = "disabled"' })
+            ], { 'class': 'hide' })
+        ]);
+        return vid;
+    } else if (['mp3', 'wav', 'ogg', 'aac'].includes(fileext)) {
+        var audio = el('span', {}, [
+            el('input', { type: 'button', value: "📻" }, [], { 'onclick': 'el_hide_toggle(event.target.nextSibling);' }),
+            el('audio', { width: '320', controls: 'controls', preload: 'none' }, [
+                el('source', { src: link, }, [], { 'onerror': 'event.target.parentNode.previousSibling.disabled = "disabled"' })
+            ], { 'class': 'hide' })
+        ]);
+        return audio;
+    }
+    return null;
+}
 
 /* Menu */
 
@@ -460,13 +537,16 @@ function menu_has_upload(disable) {
     menu.children[2].disabled = disable;
 }
 
-function menu_toggle(_ev, id) {
-    var togglediv = dom('#' + id)[0];
-    if (togglediv.classList.contains('hide')) {
-        togglediv.classList.remove('hide');
+function el_hide_toggle(el) {
+    if (el.classList.contains('hide')) {
+        el.classList.remove('hide');
     } else {
-        togglediv.classList.add('hide');
+        el.classList.add('hide');
     }
+}
+
+function menu_toggle(_ev, id) {
+    el_hide_toggle(dom('#' + id)[0]);
 }
 
 /* AUTH */
