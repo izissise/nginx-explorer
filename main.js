@@ -348,6 +348,8 @@ function setup_files() {
     var scripts = dom('script');
     icon_base = scripts[scripts.length - 1].attributes['icons'].value;
 
+    var fext_cnt = {};
+
     var body = dom('body')[0];
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
@@ -358,6 +360,10 @@ function setup_files() {
         entry = entry[1].trim().split(/\s+/);
         var date = new Date(entry[0] + ' ' + entry[1]).getTime();;
         var size = (entry[2] == '-') ? 0 : parseInt(entry[2]);
+        if (!link.endsWith('/') && link.lastIndexOf('.') > 0) {
+            var ext = link.slice(link.lastIndexOf('.') + 1).toLowerCase();
+            fext_cnt[ext] = (fext_cnt[ext] ? fext_cnt[ext] : 0) + 1;
+        }
         return [name, link, size, date];
     }).map((data) => el('tr', {}, [
         format_name(data[0], data[1], icon_base),
@@ -378,7 +384,29 @@ function setup_files() {
     while (body.hasChildNodes()) { body.removeChild(body.lastChild); }
     body.appendChild(table);
 
-    sort_table(dom('#fthead'), dom('#ftbody'), 2, true); // default sort by date
+    var getcnt = (key) => fext_cnt[key] ? fext_cnt[key] : 0;
+    var uitype = 'default';
+    var fcount = entries.length;
+    var vids = (getcnt('mkv') + getcnt('avi') + getcnt('webm') + getcnt('mov') + getcnt('mp4'));
+    var imgs = (getcnt('gif') + getcnt('png') + getcnt('jpeg') + getcnt('jpg') + getcnt('tiff') + getcnt('bpm'));
+    var audios = (getcnt('mp3') + getcnt('wav') + getcnt('ogg') + getcnt('aac'));
+    if ((imgs / fcount) > 0.8) {
+        uitype = 'photo_gallery';
+    } else if ((vids / fcount) > 0.82) {
+        uitype = 'tvshow_season';
+    } else if ((audios / fcount) > 0.82) {
+        uitype = 'podcast_season';
+    } else if (vids == 1 && ((fcount < 6) || (fext_cnt['nfo'] > 0))) {
+        uitype = 'tvshow_episode';
+    }
+    var uitype_func = {
+        'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for image
+        'tvshow_episode': () => sort_table(dom('#fthead'), dom('#ftbody'), 1, true), // sort by size
+        'tvshow_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
+        'podcast_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
+        'default': () => sort_table(dom('#fthead'), dom('#ftbody'), 2, true), // default sort by date
+    };
+    uitype_func[uitype]();
 
     var wgetcode = el('div', { id: 'wget_code' }, [
         el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) })
@@ -389,9 +417,7 @@ function setup_files() {
     styleSheet.innerText = styles
     document.head.appendChild(styleSheet)
 
-    // TODO gallery mode for image, auto gallery mode if more than 80% images
     // TODO play in browser for videos
-    // TODO proba sort and ui
 }
 
 
