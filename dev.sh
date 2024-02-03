@@ -15,17 +15,16 @@ http {
     fastcgi_temp_path /tmp/fastcgi_temp;
     uwsgi_temp_path /tmp/uwsgi_temp;
     scgi_temp_path /tmp/scgi_temp;
+
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
+
     log_format main '\$remote_addr - \$remote_user [\$time_local] "\$request" '
                     '\$status \$body_bytes_sent "\$http_referer" '
                     '"\$http_user_agent" "\$http_x_forwarded_for"';
     access_log /var/log/nginx/access.log main;
-    sendfile on;
-    #tcp_nopush on;
-    keepalive_timeout 65;
-    #gzip on;
-        include /etc/nginx/conf.d/*.conf;
+
+    include /etc/nginx/conf.d/*.conf;
 }
 EOF
 
@@ -43,6 +42,7 @@ if [[ ! -d "${here}/icons" ]]; then
 fi
 
 htpasswd -cb upload.htpasswd upload pass
+htpasswd -cb download.htpasswd download pass
 
 driver=docker
 if command -v podman &>/dev/null; then
@@ -60,4 +60,5 @@ fi
     -v "${here}:/var/www/ngx_expl:ro" \
     -v "${here}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
     -v "${here}/upload.htpasswd:/basic_auth/upload.htpasswd:ro" \
+    -v "${here}/download.htpasswd:/basic_auth/download.htpasswd:ro" \
     nginx

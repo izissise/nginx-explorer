@@ -190,11 +190,24 @@ function onWindowLoad(callback) {
     }
 }
 
-onWindowLoad(setup_files);
+function dom(select) {
+    return document.querySelectorAll(select);
+}
+
+var g_authorization_header = localStorage.getItem('authorization_header');
+var downloads_need_auth = false;
+var this_script = Array.from(dom('script')).filter((s) => s.hasAttribute('name'))[0];
+
 onWindowLoad(setup_menu);
+onWindowLoad(setup_auth_html);
+onWindowLoad(setup_files);
 onWindowLoad(setup_page);
 onWindowLoad(setup_upload);
-onWindowLoad(setup_auth_html);
+onWindowLoad(() => {
+    var styleSheet = document.createElement("style")
+    styleSheet.innerText = styles
+    document.head.appendChild(styleSheet)
+});
 
 function el(tag, props, ch, attrs) {
     var n = Object.assign(document.createElement(tag), (props === undefined) ? {} : props);
@@ -203,10 +216,6 @@ function el(tag, props, ch, attrs) {
     var attributes = (attrs === undefined) ? {} : attrs;
     n = Object.entries(attributes).reduce((e, [k, v]) => { e.setAttribute(k, v); return e; }, n);
     return n;
-}
-
-function dom(select) {
-    return document.querySelectorAll(select);
 }
 
 Number.prototype.padLeft = function(base, chr) {
@@ -270,13 +279,49 @@ function file_ext(path) {
     return path.slice(path.lastIndexOf('.') + 1).toLowerCase();
 }
 
+function auth_download(linktag) {
+    var headers = new Headers();
+    headers.append('Authorization', g_authorization_header);
+    fetch(linktag.dataset.link, {
+        credentials: 'omit', // prevent display of default pop-up
+        headers: headers,
+    }).then(res => {
+        var size = res.headers.get('Content-Length');
+        var fileStream = window.streamSaver.createWriteStream(linktag.download, {
+            size: size ? size : 0,
+        });
+        var readableStream = res.body
+        // more optimized
+        if (window.WritableStream && readableStream.pipeTo) {
+            return readableStream.pipeTo(fileStream)
+                .then(() => console.log('download success'))
+        }
+
+        window.writer = fileStream.getWriter()
+
+        var reader = res.body.getReader()
+        var pump = () => reader.read()
+            .then(res => res.done
+                ? writer.close()
+                : writer.write(res.value).then(pump))
+        pump()
+    });
+}
+
 var format_name = (name, link, icon_base) => {
     var fileext = file_ext(link);
-    var link = el('a', { href: link, ...(link.endsWith('/') ? {} : { download: name }) }, [
+    var isdir = link.endsWith('/');
+    var href = (downloads_need_auth && !isdir) ? 'javascript:void(0)' : link;
+    var onclick = (downloads_need_auth && !isdir) ? 'auth_download(this)' : '';
+    var html = el('a', {
+        href: href,
+        rel: 'noopener', // tabnabbing
+        ...(isdir ? {} : { download: name })
+    }, [
         iconFor(icon_base, fileext),
         el('span', { innerText: name }),
-    ]);
-    return el('td', {}, [link], { 'data-sort': link });
+    ], { 'data-link': link, 'onclick': onclick });
+    return el('td', {}, [html], { 'data-sort': link });
 };
 var format_size = (size) => el('td', {
     innerText: (size == 0) ? '-' : humanFileSize(size, false)
@@ -359,14 +404,39 @@ function sort_table(theads, tbodies, column, descending) {
 var icon_base = null;
 
 function setup_files() {
-    // TODO htaccess recurse
     var now = new Date().getTime();
-    var scripts = dom('script');
-    icon_base = scripts[scripts.length - 1].attributes['icons'].value;
+    icon_base = this_script.attributes['icons'].value;
 
     var fext_cnt = {};
 
     var body = dom('body')[0];
+    if (dom('pre').length == 0) {
+        if (g_authorization_header !== undefined && g_authorization_header !== null) {
+            // redo request with auth
+            var headers = new Headers();
+            headers.append('Authorization', g_authorization_header);
+            fetch(window.location.href, {
+                credentials: 'omit', // prevent display of default pop-up
+                headers: headers,
+            }).then((response) => {
+                return response.text().then((text) => {
+                    downloads_need_auth = true;
+                    // We need this to download files
+                    document.head.appendChild(el('script', {}, [], { 'src': 'https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js' }));
+                    var resp = (new DOMParser()).parseFromString(text, 'text/html');
+                    var body_childs = resp.querySelector('body').children;
+                    Array.from(body_childs).forEach((c) => body.appendChild(c));
+                    if (response.status == 200) {
+                        setup_files(); // re setup files
+                    }
+                });
+            }, (error) => console.error(error));
+        } else {
+            // probably unauthorized, tell menu
+            menu_need_auth();
+        }
+        return;
+    }
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
         var link = entry[0].split('">');
@@ -394,11 +464,15 @@ function setup_files() {
         el('tbody', { id: 'ftbody' }, entries, { 'item_count': entries.length }),
     ]);
 
-
-    while (body.hasChildNodes()) { body.removeChild(body.lastChild); }
+    // remove everything except menu and auth_form
+    Array.from(body.children).forEach((c) => {
+        if (!['menu', 'auth_form'].includes(c.id)) {
+            body.removeChild(c);
+        }
+    })
     body.appendChild(table);
 
-    var getcnt = (list) => list.reduce((acc, key) => acc + (fext_cnt[key] ? fext_cnt[key] : 0));
+    var getcnt = (list) => list.reduce((acc, key) => acc + ((fext_cnt[key] !== undefined) ? fext_cnt[key] : 0), 0);
     var uitype = 'default';
     var fcount = entries.length;
     var vids = getcnt(['mkv', 'avi', 'webm', 'mov', 'mp4', 'ogg']);
@@ -414,7 +488,7 @@ function setup_files() {
         uitype = 'tvshow_episode';
     }
     var uitype_func = {
-        'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for image
+        'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for images
         'tvshow_episode': () => sort_table(dom('#fthead'), dom('#ftbody'), 1, true), // sort by size
         'tvshow_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
         'podcast_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
@@ -426,10 +500,12 @@ function setup_files() {
         el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) })
     ], { 'class': 'form hide' });
     body.insertBefore(wgetcode, body.firstChild);
-
-    var styleSheet = document.createElement("style")
-    styleSheet.innerText = styles
-    document.head.appendChild(styleSheet)
+    if (fcount > 0) {
+        menu_has_files();
+    }
+    if ((vids + imgs + audios) > 0) {
+        menu_has_media();
+    }
 }
 
 
@@ -456,36 +532,34 @@ function media_actions() {
 }
 
 function format_media_el(link) {
-    var fileext = file_ext(link);
-    if (['gif', 'png', 'jpeg', 'jpg', 'tiff', 'bpm'].includes(fileext)) {
-        var img = el('span', {}, [
-            el('input', { type: 'button', value: "🖼️" }, [], { 'onclick': 'event.target.nextSibling.src = event.target.nextSibling.dataset.src; el_hide_toggle(event.target.nextSibling);' }),
-            el('img', { width: '320', }, [], { 'class': 'hide', 'data-src': link })
+    var fext = file_ext(link);
+    var media_html = (button, media_el, onclick) => {
+        return el('span', {}, [
+            el('input', { type: 'button', value: button }, [], { 'onclick': onclick + ' el_hide_toggle(event.target.nextSibling);' }),
+            media_el,
         ]);
-        return img;
-    } else if (['mkv', 'avi', 'webm', 'mov', 'mp4', 'ogg'].includes(fileext)) {
-        var videotype = 'video/{0}'.format(fileext);
-        if (videotype == 'video/mkv') {
-            videotype = 'video/x-matroska';
+    };
+    var err_disable = { 'onerror': 'event.target.parentNode.previousSibling.disabled = "disabled"' };
+    var m = {
+        'gif,png,jpeg,jpg,tiff,bpm': () => media_html(
+            "🖼️", el('img', { width: '320', }, [], { 'class': 'hide', 'data-src': link }),
+            'event.target.nextSibling.src = event.target.nextSibling.dataset.src',
+        ),
+        'mkv,avi,webm,mov,mp4,ogg': () => media_html(
+            "📽️", el('video', { width: '320', height: '240', controls: 'controls', preload: 'none' }, [
+                el('source', { src: link, type: 'video/{0}'.format(fext.replace('mkv', 'x-matroska').replace('avi', 'divx')) }, [], err_disable)
+            ], { 'class': 'hide' }), ''
+        ),
+        'mp3,wav,ogg,aac,flac': () => media_html(
+            "📻", el('audio', { width: '320', controls: 'controls', preload: 'none' }, [
+                el('source', { src: link, }, [], err_disable)
+            ], { 'class': 'hide' }), ''
+        ),
+    };
+    for (var k in m) {
+        if (k.split(',').includes(fext)) {
+            return m[k]();
         }
-        if (videotype == 'video/avi') {
-            videotype = 'video/divx';
-        }
-        var vid = el('span', {}, [
-            el('input', { type: 'button', value: "📽️" }, [], { 'onclick': 'el_hide_toggle(event.target.nextSibling);' }),
-            el('video', { width: '320', height: '240', controls: 'controls', preload: 'none' }, [
-                el('source', { src: link, type: videotype }, [], { 'onerror': 'event.target.parentNode.previousSibling.disabled = "disabled"' })
-            ], { 'class': 'hide' })
-        ]);
-        return vid;
-    } else if (['mp3', 'wav', 'ogg', 'aac'].includes(fileext)) {
-        var audio = el('span', {}, [
-            el('input', { type: 'button', value: "📻" }, [], { 'onclick': 'el_hide_toggle(event.target.nextSibling);' }),
-            el('audio', { width: '320', controls: 'controls', preload: 'none' }, [
-                el('source', { src: link, }, [], { 'onerror': 'event.target.parentNode.previousSibling.disabled = "disabled"' })
-            ], { 'class': 'hide' })
-        ]);
-        return audio;
     }
     return null;
 }
@@ -493,11 +567,10 @@ function format_media_el(link) {
 /* Menu */
 
 function setup_page() {
-    var scripts = dom('script');
-    var name = scripts[scripts.length - 1].attributes['name'].value;
+    var name = this_script.attributes['name'].value;
     document.title = '{0} {1}'.format(name, document.location.pathname);
 
-    var favicon = scripts[scripts.length - 1].attributes['favicon'].value;
+    var favicon = this_script.attributes['favicon'].value;
     var canvas = el('canvas', { height: 24, width: 24 });
     var ctx = canvas.getContext('2d');
     ctx.font = '24px serif';
@@ -506,16 +579,21 @@ function setup_page() {
 }
 
 function setup_menu() {
+    // TODO button tooltips
     var body = dom('body')[0];
     var logform = el('div', { id: 'menu' }, [
-        el('input', { type: 'button', value: "💾" }, [], { 'onclick': 'menu_toggle(event, "wget_code");' }),
+        el('input', { type: 'button', value: "💾" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "wget_code");' }),
         el('input', { type: 'button', value: "🔐" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
         el('input', { type: 'button', value: "📤" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
-        el('input', { type: 'button', value: "🛋️" }, [], { 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
+        el('input', { type: 'button', value: "🛋️" }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
     ]);
-    body.insertBefore(logform, body.firstChild);
+    body.appendChild(logform);
 }
 
+function menu_has_files() {
+    var menu = dom('#menu')[0];
+    menu.children[0].classList.remove('hide');
+}
 function menu_has_auth(loggedin) {
     var menu = dom('#menu')[0];
     if (loggedin) {
@@ -528,6 +606,16 @@ function menu_has_upload(disable) {
     var menu = dom('#menu')[0];
     menu.children[2].classList.remove('hide');
     menu.children[2].disabled = disable;
+}
+function menu_has_media() {
+    var menu = dom('#menu')[0];
+    menu.children[3].classList.remove('hide');
+}
+
+function menu_need_auth() {
+    var menu = dom('#menu')[0];
+    menu_toggle(null, "auth_form");
+    menu.children[1].disabled = true;
 }
 
 function el_hide_toggle(el) {
@@ -544,8 +632,6 @@ function menu_toggle(_ev, id) {
 
 /* AUTH */
 
-var g_authorization_header = localStorage.getItem('authorization_header');
-
 function setup_auth_html() { // called if auth is needed
     var body = dom('body')[0];
     var logform = el('form', { id: 'auth_form' }, [
@@ -553,7 +639,7 @@ function setup_auth_html() { // called if auth is needed
         el('input', { name: 'password', type: 'password', placeholder: 'Password' }),
         el('input', { type: 'submit', value: 'Sign In' }),
     ], { 'class': 'form hide', 'onsubmit': 'auth_sign_in(event);' });
-    body.insertBefore(logform, body.firstChild);
+    body.appendChild(logform);
     if (g_authorization_header !== null && g_authorization_header !== undefined) {
         menu_has_auth(true);
     }
@@ -583,6 +669,7 @@ function auth_logout(ev) {
 
 /* UPLOAD */
 
+// TODO show a curl command for terminal users
 var upload_func = null;
 var upload_endpoint = null;
 var upload_max_size = null;
@@ -593,9 +680,8 @@ function setup_upload() {
         console.error('Browser does not support chunked uploading');
         return;
     }
-    var scripts = dom('script');
-    upload_max_size = scripts[scripts.length - 1].attributes['upload-max-size'].value;
-    upload_endpoint = scripts[scripts.length - 1].attributes['upload'].value;
+    upload_max_size = this_script.attributes['upload-max-size'].value;
+    upload_endpoint = this_script.attributes['upload'].value;
     if (upload_endpoint === null || upload_endpoint === undefined) {
         return;
     }
