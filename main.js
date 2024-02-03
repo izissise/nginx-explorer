@@ -539,7 +539,7 @@ function format_media_el(link) {
     var fext = file_ext(link);
     var media_html = (button, media_el, onclick) => {
         return el('span', {}, [
-            el('input', { type: 'button', value: button }, [], { 'onclick': onclick + ' el_hide_toggle(event.target.nextSibling);' }),
+            el('input', { type: 'button', value: button }, [], { 'onclick': onclick + ' ; el_hide_toggle(event.target.nextSibling);' }),
             media_el,
         ]);
     };
