@@ -27,3 +27,7 @@ It should be ran into the upload directory
 ```
 find ./ -type f | while read -r i; do if [ ! -f "$i" ]; then continue; fi && read -r -n 12 head < "$i" && if [ "$head" != "#upload_meta" ]; then continue; fi && name="$(grep -v "#" "$i" | jq -r ".name")" && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")" | while read -r f; do cat "$f" >> "$name" && rm -f "$f"; done && rm -f "$i"; done
 ```
+
+## Auth Download
+
+Auth download require streamsaver.js as a depencency for now.
