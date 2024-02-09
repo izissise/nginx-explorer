@@ -92,7 +92,7 @@ th:nth-child(2), th:nth-child(3) {
   text-align: center;
 }
 td:nth-child(2), td:nth-child(3) {
-  background-color: rgba(246, 2a6, 246, 0.9);
+  background-color: rgba(246, 246, 246, 0.9);
   text-align: center;
 }
 tbody tr:nth-child(odd) {
@@ -155,7 +155,7 @@ a, a:visited {
 
 /* Menu */
 :root {
-  accent-color: mediumvioletred;
+  accent-color: #c71585;
 }
 .form, form {
     width: fit-content;
@@ -168,17 +168,8 @@ input {
     margin-top: 3px;
     margin-left: 10px;
 }
-input[type="button"]:disabled,
-input[type="submit"]:disabled,
-button:disabled,
-button[disabled] {
-    background: repeating-linear-gradient(
-        45deg,
-        #999999,
-        #cccccc 3px,
-        #666666 4px,
-        #55557f 5px
-    );
+input[type="button"]:disabled, input[type="submit"]:disabled, button:disabled, button[disabled] {
+  background: repeating-linear-gradient(45deg, #999, #ccc 3px, #666 4px, #55557f 5px);
 }
 `
 
