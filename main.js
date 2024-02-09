@@ -812,6 +812,7 @@ function upload_start(ev) {
         }
 
         // first upload meta file
+        // TODO calculate and send block and file hashes
         // /!\ /!\ /!\ conversion function should be
         // kept on server to avoid RCE from users
         var fixupcmd = 'find ./ -type f'; // find all files in current folder
