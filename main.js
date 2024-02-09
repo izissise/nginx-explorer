@@ -182,6 +182,8 @@ button[disabled] {
 }
 `
 
+// TODO css fix flashing when loggedin
+
 function onWindowLoad(callback) {
     if (window.addEventListener) {
         window.addEventListener('load', callback, false);
@@ -427,7 +429,7 @@ function setup_files() {
                     var body_childs = resp.querySelector('body').children;
                     Array.from(body_childs).forEach((c) => body.appendChild(c));
                     if (response.status == 200) {
-                        var streamserver = el('script', {}, [], { 'src': 'https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js' });
+                        var streamserver = el('script', {}, [], { 'src': 'https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js' }); // TODO try again to put it all in the same file here
                         streamserver.addEventListener("load", function(_ev) {
                             setup_files(); // re setup files
                         });
@@ -501,7 +503,7 @@ function setup_files() {
     uitype_func[uitype]();
 
     var wgetcode = el('div', { id: 'wget_code' }, [
-        el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) })
+        el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) }) // TODO wget add username if logged in
     ], { 'class': 'form hide' });
     body.insertBefore(wgetcode, body.firstChild);
     if (fcount > 0) {
@@ -575,11 +577,9 @@ function setup_page() {
     document.title = '{0} {1}'.format(name, document.location.pathname);
 
     var favicon = g_this_script.attributes['favicon'].value;
-    var canvas = el('canvas', { height: 24, width: 24 });
-    var ctx = canvas.getContext('2d');
-    ctx.font = '24px serif';
-    ctx.fillText(favicon, 0, 24);
-    document.head.appendChild(el('link', { rel: 'shortcut icon', href: canvas.toDataURL(), size: '24x24', type: 'image/ico' }));
+    var svgmagic = '<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>{0}</text></svg>'.format(favicon);
+    document.head.appendChild(el('link', { rel: 'shortcut icon', href: 'data:image/svg+xml,' + svgmagic, size: '24x24', type: 'image/ico' }));
+    document.head.appendChild(el('meta', { name: 'viewport', content: 'width=device-width, initial-scale=1' }));
 }
 
 function setup_menu() {
