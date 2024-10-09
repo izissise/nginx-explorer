@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eu
+
 here="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 cat > /tmp/nginx-explorer.conf <<EOF
