@@ -370,6 +370,7 @@ function sort_table(theads, tbodies, column, descending) {
 // TODO https://btxx.org/posts/Please_Make_Your_Table_Headings_Sticky/
 function setup_files() {
     var now = new Date().getTime();
+    var is_auth = g_this_script.attributes['auth'].value == 'yes';
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
@@ -379,6 +380,7 @@ function setup_files() {
         menu_need_auth();
         return;
     }
+    menu_has_auth(is_auth);
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
         var link = entry[0].split('">');
@@ -581,8 +583,6 @@ function setup_auth_html() { // called if auth is needed
         el('input', { type: 'submit', value: 'Sign In' }),
     ], { 'class': 'form hide', 'onsubmit': 'auth_sign_in(event);' });
     body.appendChild(logform);
-    // TODO auth how to check we are authed
-    // menu_has_auth(true);
 }
 
 function auth_sign_in(ev) {
@@ -591,19 +591,21 @@ function auth_sign_in(ev) {
     var user_el = ev.target.children[0];
     var user = user_el.value;
     var password = password_el.value;
-    // TODO auth reload page with basic auth
-    // g_authorization_header = 'Basic ' + window.btoa(user + ":" + password);
-    // localStorage.setItem('authorization_header', g_authorization_header);
-    // Reload page
-    document.location.reload();
+    var headers = new Headers();
+    headers.append('Authorization', 'Basic ' + btoa(user + ":" + password));
+    fetch(document.location, {
+        headers: headers,
+    }).then((r) => {
+        document.location.reload();
+    })
 }
 
 function auth_logout(ev) {
     ev.preventDefault();
     console.log('logout');
-    // TODO auth call /logout endpoint which should remove cookie
-    // Reload page
-    document.location.reload();
+    fetch(g_this_script.attributes['logout'].value, { method: "POST" }).then((r) => {
+        document.location.reload();
+    })
 }
 
 
@@ -627,10 +629,8 @@ function setup_upload() {
     }
 
     // check server is able to receive uploads
-    var headers = new Headers();
     return fetch(upload_endpoint, {
         credentials: 'omit', // prevent display of default pop-up
-        headers: headers,
     }).then(function(response) {
         if (!response.ok) {
             if (response.status == 411) {
