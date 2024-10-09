@@ -189,8 +189,6 @@ function dom(select) {
 
 // if file is a service worker
 if (this.document) {
-    var g_authorization_header = localStorage.getItem('authorization_header');
-    var g_downloads_need_auth = false;
     var g_this_script = Array.from(dom('script')).filter((s) => s.hasAttribute('name'))[0];
     var g_icon_base = null;
 
@@ -276,48 +274,17 @@ function file_ext(path) {
     return path.slice(path.lastIndexOf('.') + 1).toLowerCase();
 }
 
-function auth_download(linktag) {
-    var headers = new Headers();
-    headers.append('Authorization', g_authorization_header);
-    fetch(linktag.dataset.link, {
-        credentials: 'omit', // prevent display of default pop-up
-        headers: headers,
-    }).then(res => {
-        var size = res.headers.get('Content-Length');
-        var fileStream = window.streamSaver.createWriteStream(linktag.download, {
-            size: size ? size : 0,
-        });
-        var readableStream = res.body
-        // more optimized
-        if (window.WritableStream && readableStream.pipeTo) {
-            return readableStream.pipeTo(fileStream)
-                .then(() => console.log('download success'))
-        }
-
-        window.writer = fileStream.getWriter()
-
-        var reader = res.body.getReader()
-        var pump = () => reader.read()
-            .then(res => res.done
-                ? writer.close()
-                : writer.write(res.value).then(pump))
-        pump()
-    });
-}
-
 var format_name = (name, link) => {
     var fileext = file_ext(link);
     var isdir = link.endsWith('/');
-    var href = (g_downloads_need_auth && !isdir) ? 'javascript:void(0)' : link;
-    var onclick = (g_downloads_need_auth && !isdir) ? 'auth_download(this)' : '';
     var html = el('a', {
-        href: href,
+        href: link,
         rel: 'noopener', // tabnabbing
         ...(isdir ? {} : { download: name })
     }, [
         iconFor(fileext),
         el('span', { innerText: name }),
-    ], { 'data-link': link, 'onclick': onclick });
+    ], { 'data-link': link });
     return el('td', {}, [html], { 'data-sort': link });
 };
 var format_size = (size) => el('td', {
@@ -371,6 +338,8 @@ function sort_table(theads, tbodies, column, descending) {
         });
     }
     // https://github.com/tristen/tablesort/blob/master/src/tablesort.js
+    // I tried multiple solution to sort the elements in the DOM
+    // in 2023 I found this to be the fatest way
     for (j = 0; j < tbodies.length; j++) {
         var tbody = tbodies[j];
         if (tbody.rows.length == 0) {
@@ -398,6 +367,7 @@ function sort_table(theads, tbodies, column, descending) {
     }
 }
 
+// TODO https://btxx.org/posts/Please_Make_Your_Table_Headings_Sticky/
 function setup_files() {
     var now = new Date().getTime();
     g_icon_base = g_this_script.attributes['icons'].value;
@@ -405,33 +375,8 @@ function setup_files() {
     var fext_cnt = {};
 
     var body = dom('body')[0];
-    if (dom('pre').length == 0) {
-        if (g_authorization_header !== undefined && g_authorization_header !== null) {
-            // redo request with auth
-            var headers = new Headers();
-            headers.append('Authorization', g_authorization_header);
-            fetch(window.location.href, {
-                credentials: 'omit', // prevent display of default pop-up
-                headers: headers,
-            }).then((response) => {
-                return response.text().then((text) => {
-                    g_downloads_need_auth = true;
-                    var resp = (new DOMParser()).parseFromString(text, 'text/html');
-                    var body_childs = resp.querySelector('body').children;
-                    Array.from(body_childs).forEach((c) => body.appendChild(c));
-                    if (response.status == 200) {
-                        var streamserver = el('script', {}, [], { 'src': 'https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js' }); // TODO try again to put it all in the same file here
-                        streamserver.addEventListener("load", function(_ev) {
-                            setup_files(); // re setup files
-                        });
-                        document.head.appendChild(streamserver);
-                    }
-                });
-            }, (error) => console.error(error));
-        } else {
-            // probably unauthorized, tell menu
-            menu_need_auth();
-        }
+    if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
+        menu_need_auth();
         return;
     }
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
@@ -484,8 +429,9 @@ function setup_files() {
     } else if (vids == 1 && ((fcount < 6) || (getcnt(['nfo']) > 0))) {
         uitype = 'tvshow_episode';
     }
+    // TODO tvshow_season if most dirs start with same name
     var uitype_func = {
-        'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for images
+        'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for images (https://darekkay.com/blog/photography-website/ or https://www.files.gallery/)
         'tvshow_episode': () => sort_table(dom('#fthead'), dom('#ftbody'), 1, true), // sort by size
         'tvshow_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
         'podcast_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
@@ -494,13 +440,13 @@ function setup_files() {
     uitype_func[uitype]();
 
     var wgetcode = el('div', { id: 'wget_code' }, [
-        el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) }) // TODO wget add username if logged in
+        el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) }) // TODO wget add cookie if logged in
     ], { 'class': 'form hide' });
     body.insertBefore(wgetcode, body.firstChild);
     if (fcount > 0) {
         menu_has_files();
     }
-    if ((vids + imgs + audios) > 0 && !g_downloads_need_auth) {
+    if ((vids + imgs + audios) > 0) {
         menu_has_media();
     }
 }
@@ -635,9 +581,8 @@ function setup_auth_html() { // called if auth is needed
         el('input', { type: 'submit', value: 'Sign In' }),
     ], { 'class': 'form hide', 'onsubmit': 'auth_sign_in(event);' });
     body.appendChild(logform);
-    if (g_authorization_header !== null && g_authorization_header !== undefined) {
-        menu_has_auth(true);
-    }
+    // TODO auth how to check we are authed
+    // menu_has_auth(true);
 }
 
 function auth_sign_in(ev) {
@@ -646,8 +591,9 @@ function auth_sign_in(ev) {
     var user_el = ev.target.children[0];
     var user = user_el.value;
     var password = password_el.value;
-    g_authorization_header = 'Basic ' + window.btoa(user + ":" + password);
-    localStorage.setItem('authorization_header', g_authorization_header);
+    // TODO auth reload page with basic auth
+    // g_authorization_header = 'Basic ' + window.btoa(user + ":" + password);
+    // localStorage.setItem('authorization_header', g_authorization_header);
     // Reload page
     document.location.reload();
 }
@@ -655,8 +601,7 @@ function auth_sign_in(ev) {
 function auth_logout(ev) {
     ev.preventDefault();
     console.log('logout');
-    g_authorization_header = null;
-    localStorage.removeItem('authorization_header');
+    // TODO auth call /logout endpoint which should remove cookie
     // Reload page
     document.location.reload();
 }
@@ -683,9 +628,6 @@ function setup_upload() {
 
     // check server is able to receive uploads
     var headers = new Headers();
-    if (g_authorization_header !== undefined && g_authorization_header !== null) {
-        headers.append('Authorization', g_authorization_header);
-    }
     return fetch(upload_endpoint, {
         credentials: 'omit', // prevent display of default pop-up
         headers: headers,
@@ -813,7 +755,7 @@ function upload_start(ev) {
 
         // first upload meta file
         // TODO calculate and send block and file hashes
-        // /!\ /!\ /!\ conversion function should be
+        // /!\ /!\ /!\ copy of conversion script should be
         // kept on server to avoid RCE from users
         var fixupcmd = 'find ./ -type f'; // find all files in current folder
         fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
@@ -881,9 +823,6 @@ function upload_raw(url, extraParams, sessionID, file, progress, cb_data) {
             'X-Content-Range': 'bytes 0-{0}/{1}'.format(file.size - 1, file.size),
             'X-Session-ID': sessionID,
         };
-        if (g_authorization_header !== undefined) {
-            headers['Authorization'] = g_authorization_header;
-        }
         xhr = Object.entries(headers).reduce((xhr, [k, v]) => { xhr.setRequestHeader(k, v); return xhr; }, xhr);
 
         xhr.upload.addEventListener('progress', (e) => {
