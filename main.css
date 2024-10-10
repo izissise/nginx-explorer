@@ -12,35 +12,35 @@ article, aside, canvas, details, embed,
 figure, figcaption, footer, header, hgroup,
 menu, nav, output, ruby, section, summary,
 time, mark, audio, video {
-        margin: 0;
-        padding: 0;
-        border: 0;
-        font-size: 100%;
-        font: inherit;
-        vertical-align: baseline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
 }
 /* HTML5 display-role reset for older browsers */
 article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
-        display: block;
+    display: block;
 }
 body {
-        line-height: 1;
+    line-height: 1;
 }
 ol, ul {
-        list-style: none;
+    list-style: none;
 }
 blockquote, q {
-        quotes: none;
+    quotes: none;
 }
 blockquote:before, blockquote:after,
 q:before, q:after {
-        content: '';
-        content: none;
+    content: '';
+    content: none;
 }
 table {
-        border-collapse: collapse;
-        border-spacing: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
 /* Background */
@@ -66,13 +66,11 @@ table, .form, form {
     border-collapse: separate;
     -webkit-box-shadow: 0 0 4px rgba(0, 0, 0, .1);
     -moz-box-shadow: 0 0 4px rgba(0, 0, 0, .1);
-    box-shadow: 0 0 4px rgba(0, 0, 0, .1)
-    display: block;
+    box-shadow: 0 0 4px rgba(0, 0, 0, .1);
     margin-inline: auto;
     width: 83.33333%;
 }
-table td,
-table th {
+table td, table th {
     line-height: 18px;
     vertical-align: middle;
     text-align: left;
@@ -85,6 +83,9 @@ table th {
     background: -webkit-gradient(linear, left top, left bottom, from(#f6f6f6), to(#eee));
     background: -moz-linear-gradient(top, #f6f6f6, #eee);
     text-shadow: 0 1px 0 #fff;
+}
+tbody tr {
+    content-visibility: auto;
 }
 th:nth-child(2), th:nth-child(3) {
   width: 20%;
@@ -102,10 +103,10 @@ table tbody:first-child tr:first-child th,
 table thead:first-child tr td,
 table thead:first-child tr th,
 table thead:first-child tr:first-child th {
-    border-top: 0
+    border-top: 0;
 }
 table tbody+tbody {
-    border-top: 2px solid #ddd
+    border-top: 2px solid #ddd;
 }
 
 th[role=colheader]:not(.no-sort) {
