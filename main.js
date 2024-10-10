@@ -108,14 +108,14 @@ var format_name = (name, link) => {
 var format_size = (size) => el('td', {
     innerText: (size == 0) ? '-' : humanFileSize(size, false)
 }, [], { 'data-sort': size });
-var format_date = (date, now) => el('td', {
+var format_date = (date, now, with_seconds) => el('td', {
     innerText: (() => {
         var d = new Date(date);
         var dtime = d.getTime();
+        var formatted_24h = [d.getHours().padLeft(),
+            d.getMinutes().padLeft()].concat(with_seconds ? [d.getSeconds().padLeft()] : []).join(':');
         if ((now - dtime) > (1000 * 60 * 60 * 24 * 2)) { // more than 2days in the past
-            return [d.getHours().padLeft(),
-            d.getMinutes().padLeft(),
-            d.getSeconds().padLeft()].join(':') +
+            return formatted_24h +
                 ' ' +
                 [d.getDate().padLeft(),
                 (d.getMonth() + 1).padLeft(),
@@ -134,9 +134,7 @@ var format_date = (date, now) => el('td', {
                 var hoursStr = (hours == 1) ? "hour" : "hours";
                 return [hours.toString(), hoursStr, "ago"].join(" ");
             } else { // More than one day
-                return "Yesterday" + ' ' + [d.getHours().padLeft(),
-                d.getMinutes().padLeft(),
-                d.getSeconds().padLeft()].join(':');
+                return "Yesterday" + ' ' + formatted_24h;
             }
         } else { // We are too far in the future don't display
             return '-';
@@ -188,7 +186,8 @@ function sort_table(theads, tbodies, column, descending) {
 // TODO https://btxx.org/posts/Please_Make_Your_Table_Headings_Sticky/
 function setup_files() {
     var now = new Date().getTime();
-    var is_auth = g_this_script.attributes['auth'].value == 'yes';
+    var date_format = g_this_script.attributes['date-format'].value;
+    var role = g_this_script.attributes['role'].value;
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
@@ -214,7 +213,7 @@ function setup_files() {
     }).map((data) => el('tr', {}, [
         format_name(data[0], data[1]),
         format_size(data[2]),
-        format_date(data[3], now),
+        format_date(data[3], now, date_format == 'seconds'),
     ]));
     var table = el('table', { border: 1, cellpadding: 1, cellspacing: 1 }, [
         el('thead', { id: 'fthead' }, ['Filename', 'Size', 'Date'].map((f, idx) => el('th', {
