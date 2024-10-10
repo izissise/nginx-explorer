@@ -447,9 +447,7 @@ function setup_upload() {
     }
 
     // check server is able to receive uploads
-    return fetch(upload_endpoint, {
-        credentials: 'omit', // prevent display of default pop-up
-    }).then(function(response) {
+    return fetch(upload_endpoint).then(function(response) {
         if (!response.ok) {
             if (response.status == 411) {
                 console.warn("Chunked upload not supported client side, defaulting to raw upload");

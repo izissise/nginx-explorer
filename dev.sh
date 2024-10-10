@@ -59,7 +59,7 @@ fi
     -v "$HOME/Downloads:/home/user/downloads:ro" \
     -v "$HOME/Downloads/receive:/home/user/uploads:rw" \
     -v "/tmp/nginx-explorer.conf:/etc/nginx/nginx.conf:ro" \
-    -v "${here}:/var/www/ngx_expl:ro" \
+    -v "${here}:/var/www/ngxp:ro" \
     -v "${here}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
     -v "${here}/upload.htpasswd:/basic_auth/upload.htpasswd:ro" \
     -v "${here}/download.htpasswd:/basic_auth/download.htpasswd:ro" \
