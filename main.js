@@ -198,7 +198,7 @@ function setup_files() {
         return;
     }
     console.log(`role ${role}`)
-    menu_has_auth(role != '');
+    menu_has_auth(!['anon', 'local'].includes(role));
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
         var link = entry[0].split('">');
@@ -399,11 +399,11 @@ function setup_auth_html() { // called if auth is needed
         el('input', { name: 'username', type: 'text', placeholder: 'Username' }),
         el('input', { name: 'password', type: 'password', placeholder: 'Password' }),
         el('input', { type: 'submit', value: 'Sign In' }),
-    ], { 'class': 'form hide', 'onsubmit': 'auth_sign_in(event);' });
+    ], { 'class': 'form hide', 'onsubmit': 'auth_login(event);' });
     body.appendChild(logform);
 }
 
-function auth_sign_in(ev) {
+function auth_login(ev) {
     ev.preventDefault();
     var password_el = ev.target.children[1];
     var user_el = ev.target.children[0];
@@ -411,7 +411,8 @@ function auth_sign_in(ev) {
     var password = password_el.value;
     var headers = new Headers();
     headers.append('Authorization', 'Basic ' + btoa(user + ":" + password));
-    fetch(document.location, {
+    fetch(g_this_script.attributes['login'].value, {
+        method: "POST",
         headers: headers,
     }).then((r) => {
         document.location.reload();
