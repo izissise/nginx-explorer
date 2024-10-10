@@ -197,7 +197,8 @@ function setup_files() {
         menu_need_auth();
         return;
     }
-    menu_has_auth(is_auth);
+    console.log(`role ${role}`)
+    menu_has_auth(role != '');
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
         var link = entry[0].split('">');
