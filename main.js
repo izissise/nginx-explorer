@@ -191,24 +191,26 @@ function setup_files() {
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
+    var fpre_cnt = {};
+    var fpre_length = 4;
 
     var body = dom('body')[0];
     if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
         menu_need_auth();
         return;
     }
-    console.log(`role ${role}`)
     menu_has_auth(!['anon', 'local'].includes(role));
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
         var link = entry[0].split('">');
-        // var nginx_name = unescape(link[1]); // ignore it is truncated
         var link = decodeURIComponent(link[0].substr(9)); // <a href="
         var name = link;
         entry = entry[1].trim().split(/\s+/);
         var date = new Date(entry[0] + ' ' + entry[1]).getTime();;
         var size = (entry[2] == '-') ? 0 : parseInt(entry[2]);
+        var pre = name.substr(0, fpre_length);
         var ext = file_ext(link);
+        fpre_cnt[pre] = (fpre_cnt[pre] ? fpre_cnt[pre] : 0) + 1;
         fext_cnt[ext] = (fext_cnt[ext] ? fext_cnt[ext] : 0) + 1;
         return [name, link, size, date];
     }).map((data) => el('tr', {}, [
@@ -234,27 +236,24 @@ function setup_files() {
     })
     body.appendChild(table);
 
-    var getcnt = (list) => list.reduce((acc, key) => acc + ((fext_cnt[key] !== undefined) ? fext_cnt[key] : 0), 0);
     var uitype = 'default';
+    var getcnt = (list) => list.reduce((acc, key) => acc + ((fext_cnt[key] !== undefined) ? fext_cnt[key] : 0), 0);
+    var fwithprefix = Math.max.apply(null, Object.values(fpre_cnt));
     var fcount = entries.length;
     var vids = getcnt(['mkv', 'avi', 'webm', 'mov', 'mp4', 'ogg']);
     var imgs = getcnt(['gif', 'png', 'jpeg', 'jpg', 'tiff', 'bpm']);
     var audios = getcnt(['mp3', 'wav', 'ogg', 'aac']);
     if ((imgs / fcount) > 0.8) {
         uitype = 'photo_gallery';
-    } else if ((vids / fcount) > 0.82) {
-        uitype = 'tvshow_season';
-    } else if ((audios / fcount) > 0.82) {
-        uitype = 'podcast_season';
+    } else if ([vids, audios, fwithprefix].some((c) => (c / fcount) > 0.82)) {
+        uitype = 'media_season';
     } else if (vids == 1 && ((fcount < 6) || (getcnt(['nfo']) > 0))) {
         uitype = 'tvshow_episode';
     }
-    // TODO tvshow_season if most dirs start with same name
     var uitype_func = {
         'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for images (https://darekkay.com/blog/photography-website/ or https://www.files.gallery/)
         'tvshow_episode': () => sort_table(dom('#fthead'), dom('#ftbody'), 1, true), // sort by size
-        'tvshow_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
-        'podcast_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
+        'media_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
         'default': () => sort_table(dom('#fthead'), dom('#ftbody'), 2, true), // default sort by date
     };
     uitype_func[uitype]();
