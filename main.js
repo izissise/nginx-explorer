@@ -187,19 +187,20 @@ function sort_table(theads, tbodies, column, descending) {
 function setup_files() {
     var now = new Date().getTime();
     var date_format = g_this_script.attributes['date-format'].value;
-    var role = g_this_script.attributes['role'].value;
+    var user = g_this_script.attributes['user'].value;
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
     var fpre_cnt = {};
     var fpre_length = 4;
 
+    // console.log(`user ${user}`);
     var body = dom('body')[0];
     if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
         menu_need_auth();
         return;
     }
-    menu_has_auth(!['anon', 'local'].includes(role));
+    menu_has_auth(!['wan_anon', 'local_anon', ''].includes(user));
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
         var link = entry[0].split('">');
