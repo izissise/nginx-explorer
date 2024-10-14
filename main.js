@@ -577,7 +577,7 @@ function upload_start(ev) {
         var fixupcmd = 'find ./ -type f'; // find all files in current folder
         fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
         fixupcmd += ' && read -r -n 12 head < "$i" && if [ "$head" != "#upload_meta" ]; then continue; fi';
-        fixupcmd += ' && name="$(grep -v "#" "$i" | jq -r ".name")"'; // get name
+        fixupcmd += ' && name=$(grep -v "#" "$i" | jq -r ".name")'; // get name
         fixupcmd += ' && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c'; // find all files that are $chunk_sz in size
         fixupcmd += ' | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done'; // only keep the one with a higher id
         fixupcmd += ' | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")"'; // sort them and keep $chunk_cnt

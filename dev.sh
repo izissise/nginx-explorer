@@ -44,12 +44,10 @@ if [[ ! -d "${here}/icons" ]]; then
 fi
 
 touch basic.htpasswd
-htpasswd -D basic.htpasswd download
-htpasswd -b basic.htpasswd download pass
+htpasswd -D basic.htpasswd root
+htpasswd -b basic.htpasswd root pass
 htpasswd -D basic.htpasswd upload
 htpasswd -b basic.htpasswd upload pass
-htpasswd -D basic.htpasswd admin
-htpasswd -b basic.htpasswd admin pass
 
 driver=docker
 if command -v podman &>/dev/null; then
