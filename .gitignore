@@ -317,3 +317,4 @@ bower_components
 /upload.htpasswd
 /download.htpasswd
 /basic.htpasswd
+/test/test_runtime
