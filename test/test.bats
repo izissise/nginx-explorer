@@ -68,18 +68,26 @@ setup() {
 }
 
 @test "responds 403 on GET  / without cookie" {
-    run curl -s -o /dev/null -w "%{http_code}" http://localhost:8085/
-    assert_output '403'
+    run curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8085/
+    assert_line '403'
 }
 @test "responds 403 on GET  /___ngxp/login with correct creds" {
-    run curl -s -o /dev/null -w "%{http_code}" -X GET -H "authorization: Basic $(echo -n root:pass | base64)" http://127.0.0.1:8085/___ngxp/login
-    assert_output '403'
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X GET -H "authorization: Basic $(echo -n root:pass | base64)" http://127.0.0.1:8085/___ngxp/login
+    assert_line '403'
+    refute_output 'ngxp' # cookie should not be set
 }
 @test "responds 200 on POST /___ngxp/login with correct creds" {
-    run curl -s -o /dev/null -w "%{http_code}" -X POST -H "authorization: Basic $(echo -n root:pass | base64)" http://127.0.0.1:8085/___ngxp/login
-    assert_output '200'
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n root:pass | base64)" http://127.0.0.1:8085/___ngxp/login
+    assert_line '200'
+    assert_output --partial 'ngxp' # cookie should be set
 }
 @test "responds 403 on POST /___ngxp/login with wrong creds" {
-    run curl -s -o /dev/null -w "%{http_code}" -X POST -H "authorization: Basic $(echo -n root: | base64)" http://127.0.0.1:8085/___ngxp/login
-    assert_output '403'
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n root: | base64)" http://127.0.0.1:8085/___ngxp/login
+    assert_line '403'
+    refute_output 'ngxp' # cookie should not be set
+}
+@test "responds 403 on POST /___ngxp/login with unknown user" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n whoisthis:no | base64)" http://127.0.0.1:8085/___ngxp/login
+    assert_line '403'
+    refute_output 'ngxp' # cookie should not be set
 }
