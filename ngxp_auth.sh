@@ -26,7 +26,7 @@ add() {
 
     sed -i "/^${user} /d" "$accessfile"
     # accessuri line
-    printf '%s %s:%s:%s;\n' "$user" "$secret" "$user" "$accessuri" >> "$accessfile"
+    printf '%s %s:%s:%s;\n' "$user" "$user" "$secret" "$accessuri" >> "$accessfile"
 }
 
 if [ $# -eq 0 ]; then
