@@ -10,9 +10,9 @@ setup_file() {
     mkdir -p "${TEST_DIR}"/test_runtime/{uploads,download}
     touch "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map}
 
-    "${ROOT_DIR}"/ngxp_auth.sh \
+    "${ROOT_DIR}"/ngxp_auth.sh add \
         "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} root pass /
-    "${ROOT_DIR}"/ngxp_auth.sh \
+    "${ROOT_DIR}"/ngxp_auth.sh add \
         "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} upload pass /___ngxp/upload
 
     cat > "${TEST_DIR}/test_runtime/nginx.conf" <<EOF
