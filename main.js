@@ -194,11 +194,25 @@ function setup_files() {
     var fpre_cnt = {};
     var fpre_length = 4;
 
-    // console.log(`user ${user}`);
     var body = dom('body')[0];
     if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
-        menu_need_auth();
-        return;
+        var access = g_this_script.attributes['access'].value;
+        var upload = g_this_script.attributes['upload'].value;
+        if (access != '' && access[access.length - 1] != '/') {
+            access += '/';
+        }
+        if (access == '' || access == upload) {
+            menu_need_auth();
+            return;
+        }
+        if (document.location.pathname.startsWith(access)) {
+            return;
+        }
+        var elem = el('pre', {}, [el('a', {
+            href: access,
+            innerText: access,
+        }, [], {})]);
+        body.appendChild(elem);
     }
     menu_has_auth(!['wan_anon', 'local_anon', ''].includes(user));
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
@@ -207,8 +221,8 @@ function setup_files() {
         var link = decodeURIComponent(link[0].substr(9)); // <a href="
         var name = link;
         entry = entry[1].trim().split(/\s+/);
-        var date = new Date(entry[0] + ' ' + entry[1]).getTime();;
-        var size = (entry[2] == '-') ? 0 : parseInt(entry[2]);
+        var date = new Date(entry[0] + ' ' + entry[1]).getTime();
+        var size = (entry[2] == '-' || entry.length < 3) ? 0 : parseInt(entry[2]);
         var pre = name.substr(0, fpre_length);
         var ext = file_ext(link);
         fpre_cnt[pre] = (fpre_cnt[pre] ? fpre_cnt[pre] : 0) + 1;

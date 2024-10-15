@@ -47,6 +47,8 @@ touch basic.htpasswd accessuri.map
 "${here}"/ngxp_auth.sh add \
     basic.htpasswd accessuri.map root pass /
 "${here}"/ngxp_auth.sh add \
+    basic.htpasswd accessuri.map sub pass /sub
+"${here}"/ngxp_auth.sh add \
     basic.htpasswd accessuri.map upload pass /___ngxp/upload
 
 driver=docker
