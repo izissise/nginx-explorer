@@ -188,13 +188,17 @@ function setup_files() {
     var now = new Date().getTime();
     var date_format = g_this_script.attributes['date-format'].value;
     var user = g_this_script.attributes['user'].value;
+    var status = g_this_script.attributes['status'].value;
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
     var fpre_cnt = {};
     var fpre_length = 4;
 
+    console.log(`Status ${status}`);
+
     var body = dom('body')[0];
+    body.appendChild(el('span', { id: 'status', style: 'float: right; margin-right: 10px;', innerText: status }));
     if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
         var access = g_this_script.attributes['access'].value;
         var upload = g_this_script.attributes['upload'].value;
@@ -245,7 +249,7 @@ function setup_files() {
 
     // remove everything except menu and auth_form
     Array.from(body.children).forEach((c) => {
-        if (!['menu', 'auth_form'].includes(c.id)) {
+        if (!['menu', 'auth_form', 'status'].includes(c.id)) {
             body.removeChild(c);
         }
     })
