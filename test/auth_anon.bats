@@ -35,7 +35,7 @@ setup_file() {
                         '\$status \$body_bytes_sent "\$http_referer" '
                         '"\$http_user_agent" "\$http_x_forwarded_for"';
         access_log /var/log/nginx/access.log main;
-        error_log /dev/stderr debug;
+        # error_log /dev/stderr debug;
 
         include /etc/nginx/conf.d/*.conf;
     }
@@ -70,10 +70,10 @@ setup() {
 }
 
 @test "responds 200 on GET  /                with local_anon user for listing" {
-#     local cookie;
-#     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n 'local_anon:' | base64)" http://127.0.0.1:8087/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
-
-#     curl -f -s -o "${TEST_DIR}"/test_runtime/test_anon_listing1 --cookie "${cookie}" -X GET http://127.0.0.1:8087/
-    run curl -s -w "%{http_code}\n" -o "${TEST_DIR}"/test_runtime/test_anon_listing1 -X GET http://127.0.0.1:8087/
-    assert_line '200'
+    curl -f -s -w "%{http_code}\n" -o "${TEST_DIR}"/test_runtime/test_anon_listing1 -X GET http://127.0.0.1:8087/
+}
+@test "download file (simple)" {
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download_anon1
+    curl -s -o "${TEST_DIR}"/test_runtime/test_anon_download1 -w "%{http_code}\n" -X GET http://127.0.0.1:8087/download_anon1
+    cmp "${TEST_DIR}"/test_runtime/download/download_anon1 "${TEST_DIR}"/test_runtime/test_anon_download1
 }

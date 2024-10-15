@@ -95,6 +95,11 @@ setup() {
     assert_line '403'
     refute_output 'ngxp' # cookie should not be set
 }
+@test "responds 403 on POST /___ngxp/login   with not set lan_anon" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n lan_anon: | base64)" http://127.0.0.1:8085/___ngxp/login
+    assert_line '403'
+    refute_output 'ngxp' # cookie should not be set
+}
 @test "responds 403 on POST /___ngxp/login   with unknown user" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n whoisthis:no | base64)" http://127.0.0.1:8085/___ngxp/login
     assert_line '403'
@@ -112,7 +117,7 @@ setup() {
 
     curl -f -s -o "${TEST_DIR}"/test_runtime/test_listing1 --cookie "${cookie}" -X GET http://127.0.0.1:8085/
 }
-@test "download same file (simple)" {
+@test "download file (simple)" {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
@@ -120,7 +125,7 @@ setup() {
     curl -f -s -o "${TEST_DIR}"/test_runtime/test_download1 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download1
     cmp "${TEST_DIR}"/test_runtime/download/download1 "${TEST_DIR}"/test_runtime/test_download1
 }
-@test "download same file (nested)" {
+@test "download file (nested)" {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
