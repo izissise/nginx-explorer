@@ -8,10 +8,10 @@ setup_file() {
     ROOT_DIR=${TEST_DIR}/../
 
     mkdir -p "${TEST_DIR}"/test_runtime/{uploads,download}
-    rm "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map}
+    rm -f "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map}
     touch "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map}
 
-    "${ROOT_DIR}"/ngxp_auth.sh add \
+    "${ROOT_DIR}"/ngxp.sh user_add \
         "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map} lan_anon "" /
 
     cat > "${TEST_DIR}/test_runtime/nginx.conf" <<EOF
