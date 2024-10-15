@@ -43,11 +43,11 @@ if [[ ! -d "${here}/icons" ]]; then
     && \rm -f /tmp/breeze-icons.tar.gz
 fi
 
-touch basic.htpasswd
-htpasswd -D basic.htpasswd root
-htpasswd -b basic.htpasswd root pass
-htpasswd -D basic.htpasswd upload
-htpasswd -b basic.htpasswd upload pass
+touch basic.htpasswd accessuri.map
+"${here}"/ngxp_auth.sh add \
+    basic.htpasswd accessuri.map root pass /
+"${here}"/ngxp_auth.sh add \
+    basic.htpasswd accessuri.map upload pass /___ngxp/upload
 
 driver=docker
 if command -v podman &>/dev/null; then
@@ -65,4 +65,5 @@ fi
     -v "${here}:/var/www/ngxp:ro" \
     -v "${here}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
     -v "${here}/basic.htpasswd:/basic_auth/basic.htpasswd:ro" \
+    -v "${here}/accessuri.map:/basic_auth/accessuri.map:ro" \
     nginx
