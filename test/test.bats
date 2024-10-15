@@ -8,12 +8,12 @@ setup_file() {
     ROOT_DIR=${TEST_DIR}/../
 
     mkdir -p "${TEST_DIR}"/test_runtime/{uploads,download}
+    touch "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map}
 
-    touch "${TEST_DIR}/test_runtime"/basic.htpasswd
-    htpasswd -D "${TEST_DIR}/test_runtime"/basic.htpasswd root
-    htpasswd -b "${TEST_DIR}/test_runtime"/basic.htpasswd root pass
-    htpasswd -D "${TEST_DIR}/test_runtime"/basic.htpasswd upload
-    htpasswd -b "${TEST_DIR}/test_runtime"/basic.htpasswd upload pass
+    "${ROOT_DIR}"/ngxp_auth.sh \
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} root pass /
+    "${ROOT_DIR}"/ngxp_auth.sh \
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} upload pass /___ngxp/upload
 
     cat > "${TEST_DIR}/test_runtime/nginx.conf" <<EOF
     worker_processes 1;
@@ -43,7 +43,7 @@ EOF
 
     "$driver" run \
         --name="bats_nginx_exploer_test_server" \
-        -d --log-driver=none \
+        -d \
         --user="$(id -u):$(id -g)" \
         --userns=keep-id --cap-drop=ALL \
         --tmpfs=/tmp:rw,noexec,nosuid,size=70m \
@@ -54,11 +54,13 @@ EOF
         -v "${ROOT_DIR}:/var/www/ngxp:ro" \
         -v "${ROOT_DIR}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
         -v "${TEST_DIR}/test_runtime/basic.htpasswd:/basic_auth/basic.htpasswd:ro" \
+        -v "${TEST_DIR}/test_runtime/accessuri.map:/basic_auth/accessuri.map:ro" \
         nginx
 }
 
 teardown_file() {
     "$driver" stop "bats_nginx_exploer_test_server"
+    "$driver" logs "bats_nginx_exploer_test_server" &> "${TEST_DIR}/test_runtime/nginx.log"
     "$driver" rm "bats_nginx_exploer_test_server"
 }
 
@@ -69,6 +71,10 @@ setup() {
 
 @test "responds 403 on GET  / without cookie" {
     run curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8085/
+    assert_line '403'
+}
+@test "responds 403 on GET  / with a valid user but wrong secret cookie" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=78e36cb0-f12c-ffff-bd02-27b7c55843e0:root:/" http://localhost:8085/
     assert_line '403'
 }
 @test "responds 403 on GET  /___ngxp/login with correct creds" {
