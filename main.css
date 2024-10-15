@@ -84,6 +84,10 @@ table th {
     background: -moz-linear-gradient(top, #f6f6f6, #eee);
     text-shadow: 0 1px 0 #fff;
 }
+table thead {
+    position: sticky;
+    top: 0;
+}
 tbody tr {
     content-visibility: auto;
 }
@@ -165,7 +169,11 @@ input {
 }
 #menu {
     position: absolute;
-    margin-top: 3px;
+    display: flex;
+    flex-direction: column; /* Makes the buttons stack vertically */
+    align-items: center;
+    gap: 4px;
+    top: 3px;
     margin-left: 10px;
 }
 input[type="button"]:disabled, input[type="submit"]:disabled, button:disabled, button[disabled] {

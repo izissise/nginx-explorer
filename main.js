@@ -183,12 +183,10 @@ function sort_table(theads, tbodies, column, descending) {
     }
 }
 
-// TODO https://btxx.org/posts/Please_Make_Your_Table_Headings_Sticky/
 function setup_files() {
     var now = new Date().getTime();
     var date_format = g_this_script.attributes['date-format'].value;
     var user = g_this_script.attributes['user'].value;
-    var status = g_this_script.attributes['status'].value;
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
@@ -196,7 +194,6 @@ function setup_files() {
     var fpre_length = 4;
 
     var body = dom('body')[0];
-    body.appendChild(el('span', { id: 'status', style: 'float: right; margin-right: 10px;', innerText: status }));
     if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
         var access = g_this_script.attributes['access'].value;
         var upload = g_this_script.attributes['upload'].value;
@@ -356,12 +353,15 @@ function setup_page() {
 }
 
 function setup_menu() {
+    var status = g_this_script.attributes['status'].value;
     var body = dom('body')[0];
     var logform = el('div', { id: 'menu' }, [
         el('input', { type: 'button', value: "💾", title: 'bulk download/upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "wget_code");' }),
         el('input', { type: 'button', value: "🔐", title: 'login' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
         el('input', { type: 'button', value: "📤", title: 'upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
         el('input', { type: 'button', value: "🛋️", title: 'media mode' }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
+        el('span', { id: 'status', innerText: status }),
+
     ]);
     body.appendChild(logform);
 }
