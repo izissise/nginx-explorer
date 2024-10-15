@@ -4,16 +4,18 @@ if command -v podman &>/dev/null; then
 fi
 
 setup_file() {
-    TEST_DIR="$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )"
+    export TEST_DIR=$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )
     ROOT_DIR=${TEST_DIR}/../
 
     mkdir -p "${TEST_DIR}"/test_runtime/{uploads,download}
     touch "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map}
 
     "${ROOT_DIR}"/ngxp_auth.sh add \
-        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} root pass /
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} root roottestpass /
     "${ROOT_DIR}"/ngxp_auth.sh add \
-        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} upload pass /___ngxp/upload
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} nested nestedtestpass /nested
+    "${ROOT_DIR}"/ngxp_auth.sh add \
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} upload uploadtestpass /___ngxp/upload/
 
     cat > "${TEST_DIR}/test_runtime/nginx.conf" <<EOF
     worker_processes 1;
@@ -69,31 +71,91 @@ setup() {
     load 'test_helper/bats-assert/load'
 }
 
-@test "responds 403 on GET  / without cookie" {
+@test "responds 403 on GET  /                without cookie" {
     run curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8085/
     assert_line '403'
 }
-@test "responds 403 on GET  / with a valid user but wrong secret cookie" {
+@test "responds 403 on GET  /                with a valid user but wrong secret cookie" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=78e36cb0-f12c-ffff-bd02-27b7c55843e0:root:/" http://localhost:8085/
     assert_line '403'
 }
-@test "responds 403 on GET  /___ngxp/login with correct creds" {
-    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X GET -H "authorization: Basic $(echo -n root:pass | base64)" http://127.0.0.1:8085/___ngxp/login
+@test "responds 403 on GET  /___ngxp/login   with correct creds" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X GET -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login
     assert_line '403'
     refute_output 'ngxp' # cookie should not be set
 }
-@test "responds 200 on POST /___ngxp/login with correct creds" {
-    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n root:pass | base64)" http://127.0.0.1:8085/___ngxp/login
+@test "responds 200 on POST /___ngxp/login   with correct creds" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login
     assert_line '200'
     assert_output --partial 'ngxp' # cookie should be set
 }
-@test "responds 403 on POST /___ngxp/login with wrong creds" {
+@test "responds 403 on POST /___ngxp/login   with wrong creds" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n root: | base64)" http://127.0.0.1:8085/___ngxp/login
     assert_line '403'
     refute_output 'ngxp' # cookie should not be set
 }
-@test "responds 403 on POST /___ngxp/login with unknown user" {
+@test "responds 403 on POST /___ngxp/login   with unknown user" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n whoisthis:no | base64)" http://127.0.0.1:8085/___ngxp/login
     assert_line '403'
     refute_output 'ngxp' # cookie should not be set
+}
+@test "responds 200 on GET  /___ngxp/upload/ with upload user" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n upload:uploadtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/___ngxp/upload/
+    assert_line '200'
+}
+@test "download same file (simple)" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download1
+    curl -f -s -o "${TEST_DIR}"/test_runtime/test_download1 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download1
+    cmp "${TEST_DIR}"/test_runtime/download/download1 "${TEST_DIR}"/test_runtime/test_download1
+}
+@test "download same file (nested)" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    mkdir -p "${TEST_DIR}"/test_runtime/download/nested
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/nested/download2
+    curl -f -s -o "${TEST_DIR}"/test_runtime/test_download2 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/nested/download2
+    cmp "${TEST_DIR}"/test_runtime/download/nested/download2 "${TEST_DIR}"/test_runtime/test_download2
+}
+@test "download at root with nested user fails" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download3
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_download3 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download3
+    assert_line '403'
+    ! cmp "${TEST_DIR}"/test_runtime/download/nested/download3 "${TEST_DIR}"/test_runtime/test_download3
+}
+@test "download at nested with nested user ok" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/nested/download4
+    curl -s -o "${TEST_DIR}"/test_runtime/test_download4 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/nested/download4
+    cmp "${TEST_DIR}"/test_runtime/download/nested/download4 "${TEST_DIR}"/test_runtime/test_download4
+}
+@test "upload with nested user fail" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/test_upload1
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -H 'Content-Type: application/octet-stream' -H 'Content-Disposition: attachment; filename="a"' --data-binary @"${TEST_DIR}"/test_runtime/test_upload1 -X POST http://127.0.0.1:8085/___ngxp/upload/
+    assert_line '403'
+    find "${TEST_DIR}"/test_runtime/uploads/ -type f | while read -r f; do
+        ! cmp "${TEST_DIR}"/test_runtime/test_upload1 "$f"
+    done
+}
+@test "upload with upload user ok" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n upload:uploadtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/test_upload2
+    curl -f -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -H 'Content-Type: application/octet-stream' -H 'Content-Disposition: attachment; filename="b"' --data-binary @"${TEST_DIR}"/test_runtime/test_upload2 -X POST http://127.0.0.1:8085/___ngxp/upload/
+    sum=$(md5sum "${TEST_DIR}"/test_runtime/test_upload2 | awk '{ print $1 }')
+    md5sum "${TEST_DIR}"/test_runtime/uploads/* | awk '{ print $1 }' | grep "$sum"
 }

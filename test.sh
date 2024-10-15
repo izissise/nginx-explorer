@@ -4,4 +4,4 @@
 
 here="$(cd "${0%/*}" && pwd)"
 
-"$here"/test/bats/bin/bats test/*.bats
+"$here"/test/bats/bin/bats --jobs 24 test/*.bats
