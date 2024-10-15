@@ -356,13 +356,12 @@ function setup_page() {
 }
 
 function setup_menu() {
-    // TODO button tooltips
     var body = dom('body')[0];
     var logform = el('div', { id: 'menu' }, [
-        el('input', { type: 'button', value: "💾" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "wget_code");' }),
-        el('input', { type: 'button', value: "🔐" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
-        el('input', { type: 'button', value: "📤" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
-        el('input', { type: 'button', value: "🛋️" }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
+        el('input', { type: 'button', value: "💾", title: 'bulk download/upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "wget_code");' }),
+        el('input', { type: 'button', value: "🔐", title: 'login' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
+        el('input', { type: 'button', value: "📤", title: 'upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
+        el('input', { type: 'button', value: "🛋️", title: 'media mode' }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
     ]);
     body.appendChild(logform);
 }
@@ -376,6 +375,7 @@ function menu_has_auth(loggedin) {
     if (loggedin) {
         menu.children[1].onclick = auth_logout;
         menu.children[1].value = '🚪';
+        menu.children[1].title = 'logout';
     }
     menu.children[1].classList.remove('hide');
 }
