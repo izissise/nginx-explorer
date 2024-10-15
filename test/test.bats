@@ -44,7 +44,7 @@ setup_file() {
 EOF
 
     "$driver" run \
-        --name="bats_nginx_exploer_test_server" \
+        --name="bats_nginx_explorer_test_server" \
         -d \
         --user="$(id -u):$(id -g)" \
         --userns=keep-id --cap-drop=ALL \
@@ -61,9 +61,9 @@ EOF
 }
 
 teardown_file() {
-    "$driver" stop "bats_nginx_exploer_test_server"
-    "$driver" logs "bats_nginx_exploer_test_server" &> "${TEST_DIR}/test_runtime/nginx.log"
-    "$driver" rm "bats_nginx_exploer_test_server"
+    "$driver" stop "bats_nginx_explorer_test_server"
+    "$driver" logs "bats_nginx_explorer_test_server" &> "${TEST_DIR}/test_runtime/nginx.log"
+    "$driver" rm "bats_nginx_explorer_test_server"
 }
 
 setup() {
@@ -164,4 +164,24 @@ setup() {
     curl -f -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -H 'Content-Type: application/octet-stream' -H 'Content-Disposition: attachment; filename="b"' --data-binary @"${TEST_DIR}"/test_runtime/test_upload2 -X POST http://127.0.0.1:8085/___ngxp/upload/
     sum=$(md5sum "${TEST_DIR}"/test_runtime/test_upload2 | awk '{ print $1 }')
     md5sum "${TEST_DIR}"/test_runtime/uploads/* | awk '{ print $1 }' | grep "$sum"
+}
+@test "rate limit on too much login requests" {
+    sleep 2 # wait a bit so it runs after others tests
+    # do a bunch of request in //
+    curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login \
+        | curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login
+    sc=$(curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "authorization: Basic $(echo -n wrong:wrong | base64)" http://127.0.0.1:8085/___ngxp/login)
+    assert [ "$sc" -eq '429' ]
 }

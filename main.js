@@ -195,8 +195,6 @@ function setup_files() {
     var fpre_cnt = {};
     var fpre_length = 4;
 
-    console.log(`Status ${status}`);
-
     var body = dom('body')[0];
     body.appendChild(el('span', { id: 'status', style: 'float: right; margin-right: 10px;', innerText: status }));
     if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
