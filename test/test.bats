@@ -105,6 +105,12 @@ setup() {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/___ngxp/upload/
     assert_line '200'
 }
+@test "responds 200 on GET  /                with root user for listing" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    curl -f -s -o "${TEST_DIR}"/test_runtime/test_listing1 --cookie "${cookie}" -X GET http://127.0.0.1:8085/
+}
 @test "download same file (simple)" {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
