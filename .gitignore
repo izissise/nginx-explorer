@@ -314,5 +314,6 @@ bower_components
 
 /_icons
 /icons
-/upload.htpasswd
-/download.htpasswd
+/basic.htpasswd
+/accessuri.map
+/test/test_runtime

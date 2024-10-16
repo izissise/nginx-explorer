@@ -1,0 +1,181 @@
+/* Reset */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+body {
+    line-height: 1;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content: '';
+    content: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* Background */
+body {
+  background: repeating-linear-gradient(
+    -45deg,
+    #f6ba52,
+    #f6ba52 20px,
+    #ffd180 20px,
+    #ffd180 30px
+  );
+}
+.hide {
+    display: none;
+}
+/* Table */
+table, .form, form {
+    background-color: rgba(255, 255, 255, 0.9);
+    max-width: 100%;
+    border-spacing: 0;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-collapse: separate;
+    -webkit-box-shadow: 0 0 4px rgba(0, 0, 0, .1);
+    -moz-box-shadow: 0 0 4px rgba(0, 0, 0, .1);
+    box-shadow: 0 0 4px rgba(0, 0, 0, .1);
+    margin-inline: auto;
+    width: 83.33333%;
+}
+table td, table th {
+    line-height: 18px;
+    vertical-align: middle;
+    text-align: left;
+    border-top: 1px solid #ddd
+}
+table th {
+    font-weight: 700;
+    padding: 8px;
+    background: #eee;
+    background: -webkit-gradient(linear, left top, left bottom, from(#f6f6f6), to(#eee));
+    background: -moz-linear-gradient(top, #f6f6f6, #eee);
+    text-shadow: 0 1px 0 #fff;
+}
+table thead {
+    position: sticky;
+    top: 0;
+}
+tbody tr {
+    content-visibility: auto;
+}
+th:nth-child(2), th:nth-child(3) {
+  width: 20%;
+  text-align: center;
+}
+td:nth-child(2), td:nth-child(3) {
+  background-color: rgba(246, 246, 246, 0.9);
+  text-align: center;
+}
+tbody tr:nth-child(odd) {
+  background-color: rgba(246, 246, 246, 0.9);
+}
+table tbody:first-child tr:first-child td,
+table tbody:first-child tr:first-child th,
+table thead:first-child tr td,
+table thead:first-child tr th,
+table thead:first-child tr:first-child th {
+    border-top: 0;
+}
+table tbody+tbody {
+    border-top: 2px solid #ddd;
+}
+
+th[role=colheader]:not(.no-sort) {
+    cursor: pointer;
+}
+
+th[role=colheader]:not(.no-sort):after {
+    content: '';
+    float: right;
+    margin-top: 7px;
+    border-width: 0 4px 4px;
+    border-style: solid;
+    border-color: #404040 transparent;
+    visibility: hidden;
+    opacity: 0;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+th[data-sortway=ascending]:not(.no-sort):after {
+    border-bottom: none;
+    border-width: 4px 4px 0;
+}
+
+th[data-sortway]:not(.no-sort):after {
+    visibility: visible;
+    opacity: 0.4;
+}
+
+th[role=colheader]:not(.no-sort):hover:after {
+    visibility: visible;
+    opacity: 1;
+}
+
+a, a:visited {
+  color: #2281d0;
+  text-decoration: none;
+}
+
+.fileicon {
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+/* Menu */
+:root {
+  accent-color: #c71585;
+}
+.form, form {
+    width: fit-content;
+}
+input {
+    margin: 2px;
+}
+#menu {
+    position: absolute;
+    display: flex;
+    flex-direction: column; /* Makes the buttons stack vertically */
+    align-items: center;
+    gap: 4px;
+    top: 3px;
+    margin-left: 10px;
+}
+input[type="button"]:disabled, input[type="submit"]:disabled, button:disabled, button[disabled] {
+  background: repeating-linear-gradient(45deg, #999, #ccc 3px, #666 4px, #55557f 5px);
+}

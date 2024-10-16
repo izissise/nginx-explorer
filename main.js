@@ -1,180 +1,3 @@
-var styles = `
-/* Reset */
-html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed,
-figure, figcaption, footer, header, hgroup,
-menu, nav, output, ruby, section, summary,
-time, mark, audio, video {
-        margin: 0;
-        padding: 0;
-        border: 0;
-        font-size: 100%;
-        font: inherit;
-        vertical-align: baseline;
-}
-/* HTML5 display-role reset for older browsers */
-article, aside, details, figcaption, figure,
-footer, header, hgroup, menu, nav, section {
-        display: block;
-}
-body {
-        line-height: 1;
-}
-ol, ul {
-        list-style: none;
-}
-blockquote, q {
-        quotes: none;
-}
-blockquote:before, blockquote:after,
-q:before, q:after {
-        content: '';
-        content: none;
-}
-table {
-        border-collapse: collapse;
-        border-spacing: 0;
-}
-
-/* Background */
-body {
-  background: repeating-linear-gradient(
-    -45deg,
-    #f6ba52,
-    #f6ba52 20px,
-    #ffd180 20px,
-    #ffd180 30px
-  );
-}
-.hide {
-    display: none;
-}
-/* Table */
-table, .form, form {
-    background-color: rgba(255, 255, 255, 0.9);
-    max-width: 100%;
-    border-spacing: 0;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-collapse: separate;
-    -webkit-box-shadow: 0 0 4px rgba(0, 0, 0, .1);
-    -moz-box-shadow: 0 0 4px rgba(0, 0, 0, .1);
-    box-shadow: 0 0 4px rgba(0, 0, 0, .1)
-    display: block;
-    margin-inline: auto;
-    width: 83.33333%;
-}
-table td,
-table th {
-    line-height: 18px;
-    vertical-align: middle;
-    text-align: left;
-    border-top: 1px solid #ddd
-}
-table th {
-    font-weight: 700;
-    padding: 8px;
-    background: #eee;
-    background: -webkit-gradient(linear, left top, left bottom, from(#f6f6f6), to(#eee));
-    background: -moz-linear-gradient(top, #f6f6f6, #eee);
-    text-shadow: 0 1px 0 #fff;
-}
-th:nth-child(2), th:nth-child(3) {
-  width: 20%;
-  text-align: center;
-}
-td:nth-child(2), td:nth-child(3) {
-  background-color: rgba(246, 246, 246, 0.9);
-  text-align: center;
-}
-tbody tr:nth-child(odd) {
-  background-color: rgba(246, 246, 246, 0.9);
-}
-table tbody:first-child tr:first-child td,
-table tbody:first-child tr:first-child th,
-table thead:first-child tr td,
-table thead:first-child tr th,
-table thead:first-child tr:first-child th {
-    border-top: 0
-}
-table tbody+tbody {
-    border-top: 2px solid #ddd
-}
-
-th[role=colheader]:not(.no-sort) {
-    cursor: pointer;
-}
-
-th[role=colheader]:not(.no-sort):after {
-    content: '';
-    float: right;
-    margin-top: 7px;
-    border-width: 0 4px 4px;
-    border-style: solid;
-    border-color: #404040 transparent;
-    visibility: hidden;
-    opacity: 0;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-th[data-sortway=ascending]:not(.no-sort):after {
-    border-bottom: none;
-    border-width: 4px 4px 0;
-}
-
-th[data-sortway]:not(.no-sort):after {
-    visibility: visible;
-    opacity: 0.4;
-}
-
-th[role=colheader]:not(.no-sort):hover:after {
-    visibility: visible;
-    opacity: 1;
-}
-
-a, a:visited {
-  color: #2281d0;
-  text-decoration: none;
-}
-
-.fileicon {
-  margin-right: 10px;
-  vertical-align: middle;
-}
-
-/* Menu */
-:root {
-  accent-color: #c71585;
-}
-.form, form {
-    width: fit-content;
-}
-input {
-    margin: 2px;
-}
-#menu {
-    position: absolute;
-    margin-top: 3px;
-    margin-left: 10px;
-}
-input[type="button"]:disabled, input[type="submit"]:disabled, button:disabled, button[disabled] {
-  background: repeating-linear-gradient(45deg, #999, #ccc 3px, #666 4px, #55557f 5px);
-}
-`
-
-// TODO css fix flashing when loggedin
-
 function onWindowLoad(callback) {
     if (window.addEventListener) {
         window.addEventListener('load', callback, false);
@@ -189,8 +12,6 @@ function dom(select) {
 
 // if file is a service worker
 if (this.document) {
-    var g_authorization_header = localStorage.getItem('authorization_header');
-    var g_downloads_need_auth = false;
     var g_this_script = Array.from(dom('script')).filter((s) => s.hasAttribute('name'))[0];
     var g_icon_base = null;
 
@@ -199,11 +20,6 @@ if (this.document) {
     onWindowLoad(setup_files);
     onWindowLoad(setup_page);
     onWindowLoad(setup_upload);
-    onWindowLoad(() => {
-        var styleSheet = document.createElement("style")
-        styleSheet.innerText = styles
-        document.head.appendChild(styleSheet)
-    });
 }
 
 function el(tag, props, ch, attrs) {
@@ -276,61 +92,30 @@ function file_ext(path) {
     return path.slice(path.lastIndexOf('.') + 1).toLowerCase();
 }
 
-function auth_download(linktag) {
-    var headers = new Headers();
-    headers.append('Authorization', g_authorization_header);
-    fetch(linktag.dataset.link, {
-        credentials: 'omit', // prevent display of default pop-up
-        headers: headers,
-    }).then(res => {
-        var size = res.headers.get('Content-Length');
-        var fileStream = window.streamSaver.createWriteStream(linktag.download, {
-            size: size ? size : 0,
-        });
-        var readableStream = res.body
-        // more optimized
-        if (window.WritableStream && readableStream.pipeTo) {
-            return readableStream.pipeTo(fileStream)
-                .then(() => console.log('download success'))
-        }
-
-        window.writer = fileStream.getWriter()
-
-        var reader = res.body.getReader()
-        var pump = () => reader.read()
-            .then(res => res.done
-                ? writer.close()
-                : writer.write(res.value).then(pump))
-        pump()
-    });
-}
-
 var format_name = (name, link) => {
     var fileext = file_ext(link);
     var isdir = link.endsWith('/');
-    var href = (g_downloads_need_auth && !isdir) ? 'javascript:void(0)' : link;
-    var onclick = (g_downloads_need_auth && !isdir) ? 'auth_download(this)' : '';
     var html = el('a', {
-        href: href,
+        href: link,
         rel: 'noopener', // tabnabbing
         ...(isdir ? {} : { download: name })
     }, [
         iconFor(fileext),
         el('span', { innerText: name }),
-    ], { 'data-link': link, 'onclick': onclick });
+    ], { 'data-link': link });
     return el('td', {}, [html], { 'data-sort': link });
 };
 var format_size = (size) => el('td', {
     innerText: (size == 0) ? '-' : humanFileSize(size, false)
 }, [], { 'data-sort': size });
-var format_date = (date, now) => el('td', {
+var format_date = (date, now, with_seconds) => el('td', {
     innerText: (() => {
         var d = new Date(date);
         var dtime = d.getTime();
+        var formatted_24h = [d.getHours().padLeft(),
+            d.getMinutes().padLeft()].concat(with_seconds ? [d.getSeconds().padLeft()] : []).join(':');
         if ((now - dtime) > (1000 * 60 * 60 * 24 * 2)) { // more than 2days in the past
-            return [d.getHours().padLeft(),
-            d.getMinutes().padLeft(),
-            d.getSeconds().padLeft()].join(':') +
+            return formatted_24h +
                 ' ' +
                 [d.getDate().padLeft(),
                 (d.getMonth() + 1).padLeft(),
@@ -349,9 +134,7 @@ var format_date = (date, now) => el('td', {
                 var hoursStr = (hours == 1) ? "hour" : "hours";
                 return [hours.toString(), hoursStr, "ago"].join(" ");
             } else { // More than one day
-                return "Yesterday" + ' ' + [d.getHours().padLeft(),
-                d.getMinutes().padLeft(),
-                d.getSeconds().padLeft()].join(':');
+                return "Yesterday" + ' ' + formatted_24h;
             }
         } else { // We are too far in the future don't display
             return '-';
@@ -371,6 +154,8 @@ function sort_table(theads, tbodies, column, descending) {
         });
     }
     // https://github.com/tristen/tablesort/blob/master/src/tablesort.js
+    // I tried multiple solution to sort the elements in the DOM
+    // in 2023 I found this to be the fatest way
     for (j = 0; j < tbodies.length; j++) {
         var tbody = tbodies[j];
         if (tbody.rows.length == 0) {
@@ -400,56 +185,52 @@ function sort_table(theads, tbodies, column, descending) {
 
 function setup_files() {
     var now = new Date().getTime();
+    var date_format = g_this_script.attributes['date-format'].value;
+    var user = g_this_script.attributes['user'].value;
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
+    var fpre_cnt = {};
+    var fpre_length = 4;
 
     var body = dom('body')[0];
-    if (dom('pre').length == 0) {
-        if (g_authorization_header !== undefined && g_authorization_header !== null) {
-            // redo request with auth
-            var headers = new Headers();
-            headers.append('Authorization', g_authorization_header);
-            fetch(window.location.href, {
-                credentials: 'omit', // prevent display of default pop-up
-                headers: headers,
-            }).then((response) => {
-                return response.text().then((text) => {
-                    g_downloads_need_auth = true;
-                    var resp = (new DOMParser()).parseFromString(text, 'text/html');
-                    var body_childs = resp.querySelector('body').children;
-                    Array.from(body_childs).forEach((c) => body.appendChild(c));
-                    if (response.status == 200) {
-                        var streamserver = el('script', {}, [], { 'src': 'https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js' }); // TODO try again to put it all in the same file here
-                        streamserver.addEventListener("load", function(_ev) {
-                            setup_files(); // re setup files
-                        });
-                        document.head.appendChild(streamserver);
-                    }
-                });
-            }, (error) => console.error(error));
-        } else {
-            // probably unauthorized, tell menu
-            menu_need_auth();
+    if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
+        var access = g_this_script.attributes['access'].value;
+        var upload = g_this_script.attributes['upload'].value;
+        if (access != '' && access[access.length - 1] != '/') {
+            access += '/';
         }
-        return;
+        if (access == '' || access == upload) {
+            menu_need_auth();
+            return;
+        }
+        if (document.location.pathname.startsWith(access)) {
+            return;
+        }
+        var elem = el('pre', {}, [el('a', {
+            href: access,
+            innerText: access,
+        }, [], {})]);
+        body.appendChild(elem);
     }
+    menu_has_auth(!['wan_anon', 'local_anon', ''].includes(user));
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
         entry = entry.split('</a>');
         var link = entry[0].split('">');
-        // var nginx_name = unescape(link[1]); // ignore it is truncated
         var link = decodeURIComponent(link[0].substr(9)); // <a href="
         var name = link;
         entry = entry[1].trim().split(/\s+/);
-        var date = new Date(entry[0] + ' ' + entry[1]).getTime();;
-        var size = (entry[2] == '-') ? 0 : parseInt(entry[2]);
+        var date = new Date(entry[0] + ' ' + entry[1]).getTime();
+        var size = (entry[2] == '-' || entry.length < 3) ? 0 : parseInt(entry[2]);
+        var pre = name.substr(0, fpre_length);
         var ext = file_ext(link);
+        fpre_cnt[pre] = (fpre_cnt[pre] ? fpre_cnt[pre] : 0) + 1;
         fext_cnt[ext] = (fext_cnt[ext] ? fext_cnt[ext] : 0) + 1;
         return [name, link, size, date];
     }).map((data) => el('tr', {}, [
         format_name(data[0], data[1]),
         format_size(data[2]),
-        format_date(data[3], now),
+        format_date(data[3], now, date_format == 'seconds'),
     ]));
     var table = el('table', { border: 1, cellpadding: 1, cellspacing: 1 }, [
         el('thead', { id: 'fthead' }, ['Filename', 'Size', 'Date'].map((f, idx) => el('th', {
@@ -463,44 +244,42 @@ function setup_files() {
 
     // remove everything except menu and auth_form
     Array.from(body.children).forEach((c) => {
-        if (!['menu', 'auth_form'].includes(c.id)) {
+        if (!['menu', 'auth_form', 'status'].includes(c.id)) {
             body.removeChild(c);
         }
     })
     body.appendChild(table);
 
-    var getcnt = (list) => list.reduce((acc, key) => acc + ((fext_cnt[key] !== undefined) ? fext_cnt[key] : 0), 0);
     var uitype = 'default';
+    var getcnt = (list) => list.reduce((acc, key) => acc + ((fext_cnt[key] !== undefined) ? fext_cnt[key] : 0), 0);
+    var fwithprefix = Math.max.apply(null, Object.values(fpre_cnt));
     var fcount = entries.length;
     var vids = getcnt(['mkv', 'avi', 'webm', 'mov', 'mp4', 'ogg']);
     var imgs = getcnt(['gif', 'png', 'jpeg', 'jpg', 'tiff', 'bpm']);
     var audios = getcnt(['mp3', 'wav', 'ogg', 'aac']);
     if ((imgs / fcount) > 0.8) {
         uitype = 'photo_gallery';
-    } else if ((vids / fcount) > 0.82) {
-        uitype = 'tvshow_season';
-    } else if ((audios / fcount) > 0.82) {
-        uitype = 'podcast_season';
+    } else if ([vids, audios, fwithprefix].some((c) => (c / fcount) > 0.82)) {
+        uitype = 'media_season';
     } else if (vids == 1 && ((fcount < 6) || (getcnt(['nfo']) > 0))) {
         uitype = 'tvshow_episode';
     }
     var uitype_func = {
-        'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for images
+        'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for images (https://darekkay.com/blog/photography-website/ or https://www.files.gallery/)
         'tvshow_episode': () => sort_table(dom('#fthead'), dom('#ftbody'), 1, true), // sort by size
-        'tvshow_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
-        'podcast_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
+        'media_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
         'default': () => sort_table(dom('#fthead'), dom('#ftbody'), 2, true), // default sort by date
     };
     uitype_func[uitype]();
 
     var wgetcode = el('div', { id: 'wget_code' }, [
-        el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) }) // TODO wget add username if logged in
+        el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) }) // TODO wget add cookie if logged in
     ], { 'class': 'form hide' });
     body.insertBefore(wgetcode, body.firstChild);
     if (fcount > 0) {
         menu_has_files();
     }
-    if ((vids + imgs + audios) > 0 && !g_downloads_need_auth) {
+    if ((vids + imgs + audios) > 0) {
         menu_has_media();
     }
 }
@@ -574,13 +353,15 @@ function setup_page() {
 }
 
 function setup_menu() {
-    // TODO button tooltips
+    var status = g_this_script.attributes['status'].value;
     var body = dom('body')[0];
     var logform = el('div', { id: 'menu' }, [
-        el('input', { type: 'button', value: "💾" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "wget_code");' }),
-        el('input', { type: 'button', value: "🔐" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
-        el('input', { type: 'button', value: "📤" }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
-        el('input', { type: 'button', value: "🛋️" }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
+        el('input', { type: 'button', value: "💾", title: 'bulk download/upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "wget_code");' }),
+        el('input', { type: 'button', value: "🔐", title: 'login' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
+        el('input', { type: 'button', value: "📤", title: 'upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
+        el('input', { type: 'button', value: "🛋️", title: 'media mode' }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
+        el('span', { id: 'status', innerText: status }),
+
     ]);
     body.appendChild(logform);
 }
@@ -594,6 +375,7 @@ function menu_has_auth(loggedin) {
     if (loggedin) {
         menu.children[1].onclick = auth_logout;
         menu.children[1].value = '🚪';
+        menu.children[1].title = 'logout';
     }
     menu.children[1].classList.remove('hide');
 }
@@ -633,32 +415,32 @@ function setup_auth_html() { // called if auth is needed
         el('input', { name: 'username', type: 'text', placeholder: 'Username' }),
         el('input', { name: 'password', type: 'password', placeholder: 'Password' }),
         el('input', { type: 'submit', value: 'Sign In' }),
-    ], { 'class': 'form hide', 'onsubmit': 'auth_sign_in(event);' });
+    ], { 'class': 'form hide', 'onsubmit': 'auth_login(event);' });
     body.appendChild(logform);
-    if (g_authorization_header !== null && g_authorization_header !== undefined) {
-        menu_has_auth(true);
-    }
 }
 
-function auth_sign_in(ev) {
+function auth_login(ev) {
     ev.preventDefault();
     var password_el = ev.target.children[1];
     var user_el = ev.target.children[0];
     var user = user_el.value;
     var password = password_el.value;
-    g_authorization_header = 'Basic ' + window.btoa(user + ":" + password);
-    localStorage.setItem('authorization_header', g_authorization_header);
-    // Reload page
-    document.location.reload();
+    var headers = new Headers();
+    headers.append('Authorization', 'Basic ' + btoa(user + ":" + password));
+    fetch(g_this_script.attributes['login'].value, {
+        method: "POST",
+        headers: headers,
+    }).then((r) => {
+        document.location.reload();
+    })
 }
 
 function auth_logout(ev) {
     ev.preventDefault();
     console.log('logout');
-    g_authorization_header = null;
-    localStorage.removeItem('authorization_header');
-    // Reload page
-    document.location.reload();
+    fetch(g_this_script.attributes['logout'].value, { method: "POST" }).then((r) => {
+        document.location.reload();
+    })
 }
 
 
@@ -682,14 +464,7 @@ function setup_upload() {
     }
 
     // check server is able to receive uploads
-    var headers = new Headers();
-    if (g_authorization_header !== undefined && g_authorization_header !== null) {
-        headers.append('Authorization', g_authorization_header);
-    }
-    return fetch(upload_endpoint, {
-        credentials: 'omit', // prevent display of default pop-up
-        headers: headers,
-    }).then(function(response) {
+    return fetch(upload_endpoint).then(function(response) {
         if (!response.ok) {
             if (response.status == 411) {
                 console.warn("Chunked upload not supported client side, defaulting to raw upload");
@@ -813,17 +588,17 @@ function upload_start(ev) {
 
         // first upload meta file
         // TODO calculate and send block and file hashes
-        // /!\ /!\ /!\ conversion function should be
+        // /!\ /!\ /!\ copy of conversion script should be
         // kept on server to avoid RCE from users
         var fixupcmd = 'find ./ -type f'; // find all files in current folder
         fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
-        fixupcmd += ' && read -r -n 12 head < "$i" && if [ "$head" != "#upload_meta" ]; then continue; fi';
-        fixupcmd += ' && name="$(grep -v "#" "$i" | jq -r ".name")"'; // get name
+        fixupcmd += ' && read -r -n 16 head < "$i" && if [ "$head" != "#ngxpupload_meta" ]; then continue; fi';
+        fixupcmd += ' && name=$(grep -v "#" "$i" | jq -r ".name" | tr "/" "_")'; // get name
         fixupcmd += ' && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c'; // find all files that are $chunk_sz in size
         fixupcmd += ' | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done'; // only keep the one with a higher id
         fixupcmd += ' | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")"'; // sort them and keep $chunk_cnt
         fixupcmd += ' | while read -r f; do cat "$f" >> "$name" && rm -f "$f"; done && rm -f "$i"; done'; // concatenate
-        var meta = "#upload_meta\n" + JSON.stringify({
+        var meta = "#ngxpupload_meta\n" + JSON.stringify({
             'name': f.name,
             'size': f.size,
             'type': f.type,
@@ -881,9 +656,6 @@ function upload_raw(url, extraParams, sessionID, file, progress, cb_data) {
             'X-Content-Range': 'bytes 0-{0}/{1}'.format(file.size - 1, file.size),
             'X-Session-ID': sessionID,
         };
-        if (g_authorization_header !== undefined) {
-            headers['Authorization'] = g_authorization_header;
-        }
         xhr = Object.entries(headers).reduce((xhr, [k, v]) => { xhr.setRequestHeader(k, v); return xhr; }, xhr);
 
         xhr.upload.addEventListener('progress', (e) => {
