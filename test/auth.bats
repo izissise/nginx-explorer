@@ -76,8 +76,16 @@ setup() {
     run curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8085/
     assert_line '403'
 }
+@test "responds 403 on GET  /                with a valid wrongly formatted cookie" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=/:wddewnope:/:/" http://localhost:8085/
+    assert_line '403'
+}
+@test "responds 403 on GET  /                with a valid user but wrong secret cookie lan_anon" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=lan_anon:c01ee28a3dff1ccadfaa856b45bebff021adae93f3b74758:/" http://localhost:8085/
+    assert_line '403'
+}
 @test "responds 403 on GET  /                with a valid user but wrong secret cookie" {
-    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=78e36cb0-f12c-ffff-bd02-27b7c55843e0:root:/" http://localhost:8085/
+    run curl -s -o /tmp/aaaa -w "%{http_code}\n" --cookie "ngxp=root:c01ee28a3dff1ccadfaa856b45cebff021adae93f3b74758:/" http://localhost:8085/
     assert_line '403'
 }
 @test "responds 403 on GET  /___ngxp/login   with correct creds" {
