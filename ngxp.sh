@@ -116,6 +116,7 @@ user_add() {
     passhash=$(openssl passwd -5 "$pass")
     secret=$(openssl rand -hex 24)
 
+    touch "$passwdfile" "$accessfile"
     sed -i "/^${user}:/d" "$passwdfile"
     # basicauth line
     printf '%s:%s\n' "$user" "$passhash" >> "$passwdfile"

@@ -585,6 +585,7 @@ function upload_start(ev) {
             }
             console.log('Chunked upload -> Filesize: {0} ChunkCnt: {1} ChunkSz: {2} ChunkLastSz: {3}'.format(f.size, chunk_cnt, chunk_size, chunk_last_size));
         }
+        session_id = Math.round(Math.pow(10, 17) * Math.random()); // generate random long number for SessionID
 
         // first upload meta file
         // TODO calculate and send block and file hashes
@@ -602,14 +603,14 @@ function upload_start(ev) {
             'name': f.name,
             'size': f.size,
             'type': f.type,
+            'session_id': session_id,
             'chunk_cnt': chunk_cnt,
             'chunk_size': chunk_size,
             'chunk_last_size': chunk_last_size,
         }) + '\n';
         meta += '# Fixup command\n# ' + fixupcmd + '\n';
-        upload_func(upload_endpoint, '',
-            Math.round(Math.pow(10, 17) * Math.random()), // generate random long number for SessionID
-            meta, up_progress, up_progress_el,
+        upload_func(
+            upload_endpoint, session_id, meta, up_progress, up_progress_el
         ).then(([_xhr, up_progress_el]) => {
             // meta upload success, start real upload
             var seeker = 0;
@@ -628,9 +629,8 @@ function upload_start(ev) {
                 seeker += chsz;
                 promise_chain = promise_chain.then(([_xhr, up_progress_el]) => {
                     up_progress_el.children[1].innerText = chunk_txt;
-                    return upload_func(upload_endpoint, '',
-                        Math.round(Math.pow(10, 17) * Math.random()), // generate random long number for SessionID
-                        chunk, up_progress, up_progress_el
+                    return upload_func(
+                        upload_endpoint, session_id, chunk, up_progress, up_progress_el
                     );
                 });
             }
@@ -641,15 +641,11 @@ function upload_start(ev) {
     form.reset();
 }
 
-function upload_raw(url, extraParams, sessionID, file, progress, cb_data) {
+function upload_raw(url, sessionID, file, progress, cb_data) {
     return new Promise((resolve, reject) => {
         aborting = false;
         xhr = new XMLHttpRequest();
-        if (extraParams) {
-            xhr.open('POST', url + (url.indexOf('?') > -1 ? '&' : '?') + extraParams, true);
-        } else {
-            xhr.open('POST', url, true);
-        }
+        xhr.open('POST', url, true);
         var headers = {
             'Content-Type': 'application/octet-stream',
             'Content-Disposition': 'attachment; filename="{0}"'.format(encodeURIComponent(file.name)),
@@ -657,7 +653,6 @@ function upload_raw(url, extraParams, sessionID, file, progress, cb_data) {
             'X-Session-ID': sessionID,
         };
         xhr = Object.entries(headers).reduce((xhr, [k, v]) => { xhr.setRequestHeader(k, v); return xhr; }, xhr);
-
         xhr.upload.addEventListener('progress', (e) => {
             if (aborting) { return; }
             progress([e, cb_data]);
@@ -668,12 +663,12 @@ function upload_raw(url, extraParams, sessionID, file, progress, cb_data) {
             if (xhr.readyState >= 4) {
                 if (xhr.status >= 200 && xhr.status <= 299) {
                     progress([ev, cb_data]);
-                    resolve([xhr, cb_data])
+                    resolve([xhr, cb_data]);
                 } else {
                     try {
                         xhr.abort();
                     } catch (err) { }
-                    reject([xhr, cb_data])
+                    reject([xhr, cb_data]);
                 }
             }
         });

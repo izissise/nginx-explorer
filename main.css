@@ -44,14 +44,14 @@ table {
 }
 
 /* Background */
-body {
+html {
   background: repeating-linear-gradient(
     -45deg,
     #f6ba52,
     #f6ba52 20px,
     #ffd180 20px,
     #ffd180 30px
-  );
+  ) #f6ba52;
 }
 .hide {
     display: none;
