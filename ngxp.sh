@@ -76,7 +76,7 @@ EOF
 
 user_add() {
     if [ ! $# -eq 5 ]; then
-        printf '%s\n' "$0 add passwdfile accessfile username passsword accessuri"
+        printf '%s\n' "$0 user_add passwdfile accessfile username passsword accessuri"
         exit 1
     fi
 

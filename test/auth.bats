@@ -56,8 +56,8 @@ EOF
         -v "${TEST_DIR}/test_runtime/nginx.conf:/etc/nginx/nginx.conf:ro" \
         -v "${ROOT_DIR}:/var/www/ngxp:ro" \
         -v "${ROOT_DIR}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
-        -v "${TEST_DIR}/test_runtime/basic.htpasswd:/basic_auth/basic.htpasswd:ro" \
-        -v "${TEST_DIR}/test_runtime/accessuri.map:/basic_auth/accessuri.map:ro" \
+        -v "${TEST_DIR}/test_runtime/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
+        -v "${TEST_DIR}/test_runtime/accessuri.map:/opt/ngxp/accessuri.map:ro" \
         nginx
 }
 

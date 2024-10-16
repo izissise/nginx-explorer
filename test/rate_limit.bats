@@ -45,8 +45,8 @@ EOF
         -v "${TEST_DIR}/test_runtime/nginx_rate_limit.conf:/etc/nginx/nginx.conf:ro" \
         -v "${ROOT_DIR}:/var/www/ngxp:ro" \
         -v "${ROOT_DIR}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
-        -v "/dev/null:/basic_auth/basic.htpasswd:ro" \
-        -v "/dev/null:/basic_auth/accessuri.map:ro" \
+        -v "/dev/null:/opt/ngxp/basic.htpasswd:ro" \
+        -v "/dev/null:/opt/ngxp/accessuri.map:ro" \
         nginx
 }
 
