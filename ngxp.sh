@@ -68,10 +68,37 @@ EOF
         -v "/tmp/nginx-explorer.conf:/etc/nginx/nginx.conf:ro" \
         -v "${here}:/var/www/ngxp:ro" \
         -v "${here}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
-        -v "${here}/basic.htpasswd:/basic_auth/basic.htpasswd:ro" \
-        -v "${here}/accessuri.map:/basic_auth/accessuri.map:ro" \
+        -v "${here}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
+        -v "${here}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
         nginx
 
+}
+
+upload_fixup() {
+    if [ ! $# -eq 1 ]; then
+        printf '%s\n' "$0 upload_fixup upload_path"
+        exit 1
+    fi
+    upload_dir=$1
+    find "$upload_dir" -type f | while read -r h; do
+        if [ ! -f "$h" ]; then continue; fi                              # file still exist
+        read -r -n 16 head < "$h"                                        # read first 16 bytes
+        if [ "$head" != "#ngxpupload_meta" ]; then continue; fi          # if marker value
+        name=$(grep -v "#" "$h" | jq -r ".name" | tr "/" "_")            # extract filename
+        chk_sz=$(grep -v "#" "$h" | jq -r ".chunk_size | @sh")           # extract chunk size
+        chk_last_sz=$(grep -v "#" "$h" | jq -r ".chunk_last_size | @sh") # extract last chunk size
+        chk_cnt=$(grep -v "#" "$h" | jq -r ".chunk_cnt | @sh")           # extract chunk count
+        find ./ -type f -size "$chk_sz"c -or -size "$chk_last_sz"c \
+            | while read -r c; do
+                if (( 10#${h##*/} < 10#${c##*/} )); then echo "$c"; fi;  # keep higher ids
+            done \
+            | sort -n | head -n "$chk_cnt" \
+            | while read -r f; do
+                cat "$f" >> "$name" # concatenate file
+                rm -f "$f";         # remove chunk
+            done
+        rm -f "$h"; # remove header file
+    done
 }
 
 user_add() {
