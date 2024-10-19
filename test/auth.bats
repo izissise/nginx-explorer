@@ -151,6 +151,17 @@ setup() {
     assert_line '403'
     ! cmp "${TEST_DIR}"/test_runtime/download/nested/download3 "${TEST_DIR}"/test_runtime/test_download3
 }
+@test "download at root with nested user fails (transformed cookie)" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    cookie=$(echo "$cookie" | sed 's#:/nested#:/#')  # cookie transform
+
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download33
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_download33 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download3
+    assert_line '403'
+    ! cmp "${TEST_DIR}"/test_runtime/download/nested/download33 "${TEST_DIR}"/test_runtime/test_download33
+}
 @test "download at nested with nested user ok" {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
