@@ -72,21 +72,21 @@ setup() {
     load 'test_helper/bats-assert/load'
 }
 
-@test "responds 403 on GET  /                without cookie" {
+@test "responds 401 on GET  /                without cookie" {
     run curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8085/
-    assert_line '403'
+    assert_line '401'
 }
-@test "responds 403 on GET  /                with a valid wrongly formatted cookie" {
+@test "responds 401 on GET  /                with a valid wrongly formatted cookie" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=/:wddewnope:/:/" http://localhost:8085/
-    assert_line '403'
+    assert_line '401'
 }
-@test "responds 403 on GET  /                with a valid user but wrong secret cookie lan_anon" {
+@test "responds 401 on GET  /                with a valid user but wrong secret cookie lan_anon" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=lan_anon:c01ee28a3dff1ccadfaa856b45bebff021adae93f3b74758:/" http://localhost:8085/
-    assert_line '403'
+    assert_line '401'
 }
-@test "responds 403 on GET  /                with a valid user but wrong secret cookie" {
+@test "responds 401 on GET  /                with a valid user but wrong secret cookie" {
     run curl -s -o /tmp/aaaa -w "%{http_code}\n" --cookie "ngxp=root:c01ee28a3dff1ccadfaa856b45cebff021adae93f3b74758:/" http://localhost:8085/
-    assert_line '403'
+    assert_line '401'
 }
 @test "responds 403 on GET  /___ngxp/login   with correct creds" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X GET -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login
@@ -98,19 +98,19 @@ setup() {
     assert_line '200'
     assert_output --partial 'ngxp' # cookie should be set
 }
-@test "responds 403 on POST /___ngxp/login   with wrong creds" {
+@test "responds 401 on POST /___ngxp/login   with wrong creds" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n root: | base64)" http://127.0.0.1:8085/___ngxp/login
-    assert_line '403'
+    assert_line '401'
     refute_output 'ngxp' # cookie should not be set
 }
-@test "responds 403 on POST /___ngxp/login   with not set lan_anon" {
+@test "responds 401 on POST /___ngxp/login   with not set lan_anon" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n lan_anon: | base64)" http://127.0.0.1:8085/___ngxp/login
-    assert_line '403'
+    assert_line '401'
     refute_output 'ngxp' # cookie should not be set
 }
-@test "responds 403 on POST /___ngxp/login   with unknown user" {
+@test "responds 401 on POST /___ngxp/login   with unknown user" {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie-jar - -X POST -H "authorization: Basic $(echo -n whoisthis:no | base64)" http://127.0.0.1:8085/___ngxp/login
-    assert_line '403'
+    assert_line '401'
     refute_output 'ngxp' # cookie should not be set
 }
 @test "responds 200 on GET  /___ngxp/upload/ with upload user" {
@@ -148,7 +148,7 @@ setup() {
 
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download3
     run curl -s -o "${TEST_DIR}"/test_runtime/test_download3 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download3
-    assert_line '403'
+    assert_line '401'
     ! cmp "${TEST_DIR}"/test_runtime/download/nested/download3 "${TEST_DIR}"/test_runtime/test_download3
 }
 @test "download at root with nested user fails (transformed cookie)" {
@@ -159,7 +159,7 @@ setup() {
 
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download33
     run curl -s -o "${TEST_DIR}"/test_runtime/test_download33 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download3
-    assert_line '403'
+    assert_line '401'
     ! cmp "${TEST_DIR}"/test_runtime/download/nested/download33 "${TEST_DIR}"/test_runtime/test_download33
 }
 @test "download at nested with nested user ok" {
@@ -176,7 +176,7 @@ setup() {
 
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/test_upload1
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -H 'Content-Type: application/octet-stream' -H 'Content-Disposition: attachment; filename="a"' --data-binary @"${TEST_DIR}"/test_runtime/test_upload1 -X POST http://127.0.0.1:8085/___ngxp/upload/
-    assert_line '403'
+    assert_line '401'
     find "${TEST_DIR}"/test_runtime/uploads/ -type f | while read -r f; do
         ! cmp "${TEST_DIR}"/test_runtime/test_upload1 "$f"
     done

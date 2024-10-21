@@ -74,13 +74,13 @@ setup() {
 @test "responds 200 on GET  /                with local_anon user for listing" {
     curl -f -s -w "%{http_code}\n" -o "${TEST_DIR}"/test_runtime/test_anon_listing1 -X GET http://127.0.0.1:8087/
 }
-@test "responds 403 on GET  /                with a logged in user that change their username in cookie" {
+@test "responds 401 on GET  /                with a logged in user that change their username in cookie" {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n hack:toor | base64)" http://127.0.0.1:8087/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
     cookie=$(echo "$cookie" | sed 's#hack#lan_anon#;s#:/noaccess#:/#')  # cookie transform
     run curl -s -o "${TEST_DIR}"/test_runtime/test_anon_listing2 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8087/
-    assert_line '403'
+    assert_line '401'
 }
 @test "download file (simple)" {
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download_anon1
