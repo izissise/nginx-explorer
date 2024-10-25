@@ -1,6 +1,7 @@
 # nginx-explorer
-File explorer in javascript, web based
-using nginx for directory listing
+
+Minimal web interface to download/upload files.
+Using nginx as a backend.
 
 Features:
 - list files
@@ -11,21 +12,17 @@ Features:
 - media
 - auto sort
 
-Icons must be downloaded see `./ngxp.dev download_icons`
-
-You can remove the upload or basic auth from the nginx conf and it will automatically disable it client side.
+see [nginx-explorer.conf](https://github.com/izissise/nginx-explorer/blob/master/nginx-explorer.conf)
 
 ![example](https://raw.github.com/izissise/nginx-explorer/master/images/example.png "Example")
 
-
-## Quick launch with docker
+```bash
+git clone https://github.com/izissise/nginx-explorer.git
+nginx-explorer/ngxp.sh download_icons
+nginx-explorer/ngxp.sh servethis
 ```
-./ngxp.dev dev
-```
-Go to 127.0.0.1:8080 with you browser.
 
-
-## Upload fixup command
+# Upload
 
 Uploaded files arrive chunked,
 you can concatenate back using `./ngxp.sh upload_fixup`
