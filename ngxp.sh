@@ -9,46 +9,19 @@ test() {
 }
 
 download_icons() {
-    breeze_icon_version=5.114.0
-    echo 'Downloading icons'
-    echo "https://github.com/KDE/breeze-icons/archive/v$breeze_icon_version.tar.gz" | while read -r dlu; do curl -s -L "$dlu" -o /tmp/breeze-icons.tar.gz; done \
-    && rm -rf "${here}/icons" \
-    && mkdir -p "${here}/_icons" \
-    && tar -xf /tmp/breeze-icons.tar.gz -C "${here}/_icons" \
-    && mv "${here}/_icons/breeze-icons-$breeze_icon_version/icons/mimetypes/32" "${here}/icons" \
-    && mv "${here}/_icons/breeze-icons-$breeze_icon_version/icons/places/32/folder-download.svg" "${here}/icons"/folder.svg \
-    && rm -rf "${here}/_icons" \
-    && rm -f /tmp/breeze-icons.tar.gz
+    breeze_icon_version=6.7.0
+    if [ ! -d "${here}/icons" ]; then
+        echo 'Downloading icons'
+        mkdir "${here}/icons"
+        curl -s -L "https://github.com/KDE/breeze-icons/archive/v${breeze_icon_version}.tar.gz" -o - \
+            | tar -C "${here}/icons" -xzf - "breeze-icons-${breeze_icon_version}/icons/mimetypes/32" "breeze-icons-${breeze_icon_version}/icons/places/32" --strip-components=4
+        mv "${here}/icons/folder-cloud.svg" "${here}/icons/folder.svg"
+    else
+        echo "Icons already downloaded at ${here}/icons"
+    fi
 }
 
 dev() {
-    cat > /tmp/nginx-explorer.conf <<EOF
-    worker_processes 1;
-    error_log /var/log/nginx/error.log warn;
-    pid /tmp/nginx.pid;
-    events {
-        worker_connections 1024;
-    }
-    http {
-        proxy_temp_path /tmp/proxy_temp;
-        client_body_temp_path /tmp/client_temp;
-        fastcgi_temp_path /tmp/fastcgi_temp;
-        uwsgi_temp_path /tmp/uwsgi_temp;
-        scgi_temp_path /tmp/scgi_temp;
-
-        include /etc/nginx/mime.types;
-        default_type application/octet-stream;
-
-        log_format main '\$remote_addr - \$remote_user [\$time_local] "\$request" '
-                        '\$status \$body_bytes_sent "\$http_referer" '
-                        '"\$http_user_agent" "\$http_x_forwarded_for"';
-        access_log /var/log/nginx/access.log main;
-
-        include /etc/nginx/conf.d/*.conf;
-    }
-EOF
-
-
     user_add basic.htpasswd accessuri.map root pass /
     user_add basic.htpasswd accessuri.map sub pass /sub
     user_add basic.htpasswd accessuri.map upload pass /___ngxp/upload
@@ -65,18 +38,44 @@ EOF
         --expose=8080 -p 8080:8080 \
         -v "$HOME/Downloads:/home/user/downloads:ro" \
         -v "$HOME/Downloads/receive:/home/user/uploads:rw" \
-        -v "/tmp/nginx-explorer.conf:/etc/nginx/nginx.conf:ro" \
-        -v "${here}:/var/www/ngxp:ro" \
+        -v "${here}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
+        -v "${here}/icons:/var/www/ngxp/icons:ro" \
+        -v "${here}/main.js:/var/www/ngxp/main.js:ro" \
+        -v "${here}/main.css:/var/www/ngxp/main.css:ro" \
         -v "${here}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
         -v "${here}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
         -v "${here}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
         nginx
+}
 
+servethis() {
+    user_add "${here}"/basic.htpasswd "${here}"/accessuri.map lan_anon "" /
+
+    driver=docker
+    if command -v podman &>/dev/null; then
+        driver=podman
+    fi
+    "$driver" run \
+        --rm -it --log-driver=none \
+        --user="$(id -u):$(id -g)" \
+        --userns=keep-id --cap-drop=ALL \
+        --tmpfs=/tmp:rw,noexec,nosuid,size=70m \
+        --expose=8080 -p 8080:8080 \
+        -v "$PWD:/home/user/downloads:ro" \
+        -v "$PWD:/home/user/uploads:rw" \
+        -v "${here}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
+        -v "${here}/icons:/var/www/ngxp/icons:ro" \
+        -v "${here}/main.js:/var/www/ngxp/main.js:ro" \
+        -v "${here}/main.css:/var/www/ngxp/main.css:ro" \
+        -v "${here}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
+        -v "${here}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
+        -v "${here}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
+        nginx
 }
 
 upload_fixup() {
     if [ ! $# -eq 1 ]; then
-        printf '%s\n' "$0 upload_fixup upload_path"
+        printf '%s\n' "$0 ${FUNCNAME[0]} upload_path"
         exit 1
     fi
     upload_dir=$1
@@ -88,7 +87,7 @@ upload_fixup() {
         chk_sz=$(grep -v "#" "$h" | jq -r ".chunk_size | @sh")           # extract chunk size
         chk_last_sz=$(grep -v "#" "$h" | jq -r ".chunk_last_size | @sh") # extract last chunk size
         chk_cnt=$(grep -v "#" "$h" | jq -r ".chunk_cnt | @sh")           # extract chunk count
-        find ./ -type f -size "$chk_sz"c -or -size "$chk_last_sz"c \
+        find "$upload_dir" -type f -size "$chk_sz"c -or -size "$chk_last_sz"c \
             | while read -r c; do
                 if (( 10#${h##*/} < 10#${c##*/} )); then echo "$c"; fi;  # keep higher ids
             done \
@@ -103,7 +102,7 @@ upload_fixup() {
 
 user_add() {
     if [ ! $# -eq 5 ]; then
-        printf '%s\n' "$0 user_add passwdfile accessfile username passsword accessuri"
+        printf '%s\n' "$0 ${FUNCNAME[0]} passwdfile accessfile username passsword accessuri"
         exit 1
     fi
 
@@ -114,7 +113,7 @@ user_add() {
     accessuri=$5
 
     passhash=$(openssl passwd -5 "$pass")
-    secret=$(openssl rand -hex 24)
+    secret=$(openssl rand -hex 64)
 
     touch "$passwdfile" "$accessfile"
     sed -i "/^${user}:/d" "$passwdfile"
