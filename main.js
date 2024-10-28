@@ -505,16 +505,16 @@ function setup_upload() {
 }
 
 function uploade_etc_and_speed(now, transfer_size, transferred_size, last_transferred_date, last_transferred_size) {
-    var estimate_to_completion = null;
-    var speed = null;
+    var estimate_to_completion = -1.0;
+    var speed = 0.0;
     var duration = now - last_transferred_date;
     if (duration != 0.0) {
-        speed = (transferred_size - last_transferred_size) / duration;
+        speed = (transferred_size - last_transferred_size) / (duration / 1000);
         if (speed != 0) {
             estimate_to_completion = (transfer_size - transferred_size) / speed;
         }
     }
-    return estimate_to_completion, speed
+    return [estimate_to_completion, speed];
 }
 
 function upload_start(ev) {
@@ -527,8 +527,6 @@ function upload_start(ev) {
         var ftotal = e.total == 0 ? 1 : e.total;
         var floaded = e.loaded == 0 ? 1 : e.loaded;
         var perc = Math.floor((floaded / ftotal) * 100);
-        var etc = null;
-        var speed = null;
         var bar = upprogress.children[0];
         var last_transferred_date = bar.dataset.lasttransferreddate;
         if (last_transferred_date === undefined) {
@@ -539,8 +537,8 @@ function upload_start(ev) {
             last_transferred_size = 0;
         }
         var duration = e.timeStamp - last_transferred_date;
-        etc, speed = uploade_etc_and_speed(e.timeStamp / 1000, ftotal, floaded, last_transferred_date, last_transferred_size);
-        console.log("{0}%, transferred {1}MiB/{2}MiB, {3}MiB/S in the last {4}s should finish in {5} seconds".format(perc, (floaded / (1024 * 1024)).toFixed(1), (ftotal / (1024 * 1024)).toFixed(1), (speed / (1024 * 1024)).toFixed(1), (duration / 1000).toFixed(1), (etc / 1000).toFixed(0)));
+        var [etc, speed] = uploade_etc_and_speed(e.timeStamp, ftotal, floaded, last_transferred_date, last_transferred_size);
+        console.log("{0}%, transferred {1}MiB/{2}MiB, {3}MiB/S in the last {4}s should finish in {5} seconds".format(perc, (floaded / (1024 * 1024)).toFixed(1), (ftotal / (1024 * 1024)).toFixed(1), (speed / (1024 * 1024)).toFixed(2), (duration / 1000).toFixed(0), (etc).toFixed(0)));
         bar.value = perc;
         bar.dataset.lasttransferreddate = e.timeStamp;
         bar.dataset.lasttransferredsize = floaded;
