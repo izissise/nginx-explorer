@@ -85,7 +85,11 @@ setup() {
     assert_line '401'
 }
 @test "responds 401 on GET  /                with a valid user but wrong secret cookie" {
-    run curl -s -o /tmp/aaaa -w "%{http_code}\n" --cookie "ngxp=root:c01ee28a3dff1ccadfaa856b45cebff021adae93f3b74758:/" http://localhost:8085/
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=root:c01ee28a3dff1ccadfaa856b45cebff021adae93f3b74758:/" http://localhost:8085/
+    assert_line '401'
+}
+@test "responds 401 on GET  /                with regex pwn" {
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "ngxp=root:?" http://localhost:8085/
     assert_line '401'
 }
 @test "responds 403 on GET  /___ngxp/login   with correct creds" {
