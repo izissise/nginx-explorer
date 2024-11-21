@@ -6,6 +6,26 @@ function onWindowLoad(callback) {
     }
 }
 
+function dynamic_script_load(urls, index = 0) {
+    return new Promise((resolve, reject) => {
+        if (index >= urls.length) {
+            return reject("all script URLs failed to load.");
+        }
+        var script = document.createElement('script');
+        script.src = urls[index];
+        script.addEventListener("load", function() {
+            console.log(`Script loaded successfully from ${urls[index]}`);
+            resolve(urls[index]);
+        });
+
+        script.addEventListener("error", function() {
+            console.error(`Failed to load script from ${urls[index]}. Trying next URL...`);
+            dynamic_script_load(urls, index + 1).then(resolve, reject); // Try the next URL
+        });
+        document.head.appendChild(script);
+    });
+}
+
 function dom(select) {
     return document.querySelectorAll(select);
 }
@@ -430,7 +450,7 @@ function auth_login(ev) {
     fetch(g_this_script.attributes['login'].value, {
         method: "POST",
         headers: headers,
-    }).then((r) => {
+    }).then(() => {
         document.location.reload();
     })
 }
@@ -459,6 +479,7 @@ function setup_upload() {
     }
     upload_max_size = g_this_script.attributes['upload-max-size'].value;
     upload_endpoint = g_this_script.attributes['upload'].value;
+    upload_md5_hasher_script = g_this_script.attributes['upload-hasher'].get(value, '');
     if (upload_endpoint === null || upload_endpoint === undefined) {
         return;
     }
@@ -501,6 +522,11 @@ function setup_upload() {
             ], { 'class': 'hide' }),
         ], { 'class': 'hide' });
         body.insertBefore(updiv, body.firstChild);
+        // load md5 hasher script
+        dynamic_script_load([
+            upload_md5_hasher_script,
+            'https://cdn.jsdelivr.net/npm/hash-wasm@4/dist/md5.umd.min.js',
+        ]);
     });
 }
 
@@ -585,56 +611,44 @@ function upload_start(ev) {
         }
         session_id = Math.round(Math.pow(10, 17) * Math.random()); // generate random long number for SessionID
 
-        // first upload meta file
-        // TODO calculate and send block and file hashes
-        // /!\ /!\ /!\ copy of conversion script should be
-        // kept on server to avoid RCE from users
-        var fixupcmd = 'find ./ -type f'; // find all files in current folder
-        fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
-        fixupcmd += ' && read -r -n 16 head < "$i" && if [ "$head" != "#ngxpupload_meta" ]; then continue; fi';
-        fixupcmd += ' && name=$(grep -v "#" "$i" | jq -r ".name" | tr "/" "_")'; // get name
-        fixupcmd += ' && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c'; // find all files that are $chunk_sz in size
-        fixupcmd += ' | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done'; // only keep the one with a higher id
-        fixupcmd += ' | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")"'; // sort them and keep $chunk_cnt
-        fixupcmd += ' | while read -r f; do cat "$f" >> "$name" && rm -f "$f"; done && rm -f "$i"; done'; // concatenate
-        var meta = "#ngxpupload_meta\n" + JSON.stringify({
-            'name': f.name,
-            'size': f.size,
-            'type': f.type,
-            'session_id': session_id,
-            'chunk_cnt': chunk_cnt,
-            'chunk_size': chunk_size,
-            'chunk_last_size': chunk_last_size,
-        }) + '\n';
-        meta += '# Fixup command\n# ' + fixupcmd + '\n';
-        upload_func(
-            upload_endpoint, session_id, meta, up_progress, up_progress_el
-        ).then(([_xhr, up_progress_el]) => {
-            // meta upload success, start real upload
-            var seeker = 0;
-            up_progress_el.children[1].innerText = '◌';
-            var promise_chain = Promise.resolve(([null, up_progress_el]));
-            for (var i = 0; i < chunk_cnt; i++) {
-                let chunk_txt = '◌';
-                if (chunk_cnt > 1) {
-                    chunk_txt = '{0}/{1}'.format(i + 1, chunk_cnt);
-                }
-                var chsz = chunk_size;
-                if ((seeker + chsz) > f.size) {
-                    chsz = chunk_last_size;
-                }
-                let chunk = f.slice(seeker, seeker + chsz);
-                seeker += chsz;
-                promise_chain = promise_chain.then(([_xhr, up_progress_el]) => {
-                    up_progress_el.children[1].innerText = chunk_txt;
-                    return upload_func(
-                        upload_endpoint, session_id, chunk, up_progress, up_progress_el
-                    );
-                });
+        // start upload
+        var seeker = 0;
+        up_progress_el.children[1].innerText = '◌';
+        var promise_chain = Promise.resolve(([null, [up_progress_el, []]]));
+        for (var i = 0; i < chunk_cnt; i++) {
+            let chunk_txt = '◌';
+            if (chunk_cnt > 1) {
+                chunk_txt = '{0}/{1}'.format(i + 1, chunk_cnt);
             }
-            promise_chain.then(up_success);
+            var chsz = chunk_size;
+            if ((seeker + chsz) > f.size) {
+                chsz = chunk_last_size;
+            }
+            let chunk = f.slice(seeker, seeker + chsz);
+            seeker += chsz;
+            promise_chain = promise_chain.then(([_xhr, [up_progress_el, hashes]]) => {
+                up_progress_el.children[1].innerText = chunk_txt;
+                return upload_func(
+                    upload_endpoint, session_id, chunk, up_progress, [up_progress_el, hashes]
+                );
+            });
+        }
+        // upload meta file
+        promise_chain.then(([_xhr, [up_progress_el, hashes]]) => {
+            var meta = "#ngxpupload_meta\n" + JSON.stringify({
+                'name': f.name,
+                'size': f.size,
+                'type': f.type,
+                'session_id': session_id,
+                'chunk_cnt': chunk_cnt,
+                'chunk_size': chunk_size,
+                'chunk_last_size': chunk_last_size,
+            }) + '\n';
+            meta += '# Fixup command\n# ' + 'nope' + '\n';
+            return upload_func(
+                upload_endpoint, session_id, meta, up_progress, up_progress_el
+            ).then(up_success)
         }, up_error);
-
     });
     form.reset();
 }
