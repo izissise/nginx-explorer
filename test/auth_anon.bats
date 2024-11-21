@@ -4,7 +4,8 @@ if command -v podman &>/dev/null; then
 fi
 
 setup_file() {
-    export TEST_DIR=$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )
+    export TEST_DIR
+    TEST_DIR=$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )
     ROOT_DIR=${TEST_DIR}/../
 
     mkdir -p "${TEST_DIR}"/test_runtime/{uploads,download}
