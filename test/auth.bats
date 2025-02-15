@@ -263,10 +263,15 @@ setup() {
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n abc:abctestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
     mkdir -p "${TEST_DIR}"/test_runtime/download/{abc,ab,a}
+    touch "${TEST_DIR}"/test_runtime/download/ab/no
 
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/abc/
     assert_line '200'
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/ab/
+    assert_line '401'
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/ab/no
+    assert_line '401'
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET 'http://127.0.0.1:8085/ab\/no'
     assert_line '401'
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/a/
     assert_line '200'
