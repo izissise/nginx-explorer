@@ -195,23 +195,24 @@ function setup_files() {
 
     var body = dom('body')[0];
     if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
-        var access = g_this_script.attributes['access'].value;
+        var accesses = Array.from(g_this_script.attributes['accesses'].value.split('|'));
         var upload = g_this_script.attributes['upload'].value;
-        if (access != '' && access[access.length - 1] != '/') {
-            access += '/';
-        }
-        if (access == '' || access == upload) {
+        if (accesses.length == 0 || (accesses.length == 1 && accesses[0] == upload)) {
             menu_need_auth();
             return;
         }
-        if (document.location.pathname.startsWith(access)) {
-            return;
+        if (accesses.some((a) => document.location.pathname.startsWith(a))) {
+            return; // just an empty directory we have access
         }
-        var elem = el('pre', {}, [el('a', {
-            href: access,
-            innerText: access,
-        }, [], {})]);
-        body.appendChild(elem);
+        var new_pre = el('pre', {},
+            accesses.filter((a) => a != upload)
+                .map((a) => el('a', {
+                    href: a[a.length - 1] == '/' ? a : a + '/',
+                    innerText: a,
+                }, [], {})
+            )
+        );
+        body.appendChild(new_pre);
     }
     menu_has_auth(!['wan_anon', 'local_anon', ''].includes(user));
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
