@@ -23,6 +23,8 @@ setup_file() {
         "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} upload uploadtestpass /___ngxp/upload/
     "${ROOT_DIR}"/ngxp.sh user_add \
         "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} mpath mpathtestpass /mpath/1 /mpath/3 /mpath/four
+    "${ROOT_DIR}"/ngxp.sh user_add \
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} abc abctestpass /abc /a
 
     cat > "${TEST_DIR}/test_runtime/nginx.conf" <<EOF
     worker_processes 1;
@@ -255,4 +257,19 @@ setup() {
         "${TEST_DIR}"/test_runtime/download/mpath/3/file "${TEST_DIR}"/test_runtime/test_mpath3 \
         "${TEST_DIR}"/test_runtime/download/mpath/four "${TEST_DIR}"/test_runtime/test_mpath4 \
         "${TEST_DIR}"/test_runtime/download/mpath/five "${TEST_DIR}"/test_runtime/test_mpath5
+}
+@test "check auth for path subset and expansion" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n abc:abctestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    mkdir -p "${TEST_DIR}"/test_runtime/download/{abc,ab,a}
+
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/abc/
+    assert_line '200'
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/ab/
+    assert_line '401'
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/a/
+    assert_line '200'
+
+    rm -rf "${TEST_DIR}"/test_runtime/download/{abc,ab,a}
 }
