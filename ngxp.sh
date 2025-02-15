@@ -2,22 +2,22 @@
 
 set -eu
 
-cwd=$(cd "${0%/*}" && pwd)
+CWD=$(cd "${0%/*}" && pwd)
 
 test() {
-    "$cwd"/test/bats/bin/bats --jobs 24 test/*.bats
+    "$CWD"/test/bats/bin/bats --jobs 24 test/*.bats
 }
 
 download_icons() {
     breeze_icon_version=6.7.0
-    if [ ! -d "${cwd}/icons" ]; then
+    if [ ! -d "${CWD}/icons" ]; then
         echo 'Downloading icons'
-        mkdir "${cwd}/icons"
+        mkdir "${CWD}/icons"
         curl -s -L "https://github.com/KDE/breeze-icons/archive/v${breeze_icon_version}.tar.gz" -o - \
-            | tar -C "${cwd}/icons" -xzf - "breeze-icons-${breeze_icon_version}/icons/mimetypes/32" "breeze-icons-${breeze_icon_version}/icons/places/32" --strip-components=4
-        mv "${cwd}/icons/folder-cloud.svg" "${cwd}/icons/folder.svg"
+            | tar -C "${CWD}/icons" -xzf - "breeze-icons-${breeze_icon_version}/icons/mimetypes/32" "breeze-icons-${breeze_icon_version}/icons/places/32" --strip-components=4
+        mv "${CWD}/icons/folder-cloud.svg" "${CWD}/icons/folder.svg"
     else
-        echo "Icons already downloaded at ${cwd}/icons"
+        echo "Icons already downloaded at ${CWD}/icons"
     fi
 }
 
@@ -38,18 +38,18 @@ dev() {
         --expose=8080 -p 8080:8080 \
         -v "$HOME/Downloads:/home/user/downloads:ro" \
         -v "$HOME/Downloads/receive:/home/user/uploads:rw" \
-        -v "${cwd}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
-        -v "${cwd}/icons:/var/www/ngxp/icons:ro" \
-        -v "${cwd}/main.js:/var/www/ngxp/main.js:ro" \
-        -v "${cwd}/main.css:/var/www/ngxp/main.css:ro" \
-        -v "${cwd}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
-        -v "${cwd}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
-        -v "${cwd}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
+        -v "${CWD}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
+        -v "${CWD}/icons:/var/www/ngxp/icons:ro" \
+        -v "${CWD}/main.js:/var/www/ngxp/main.js:ro" \
+        -v "${CWD}/main.css:/var/www/ngxp/main.css:ro" \
+        -v "${CWD}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
+        -v "${CWD}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
+        -v "${CWD}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
         nginx
 }
 
 servethis() {
-    user_add "${cwd}"/basic.htpasswd "${cwd}"/accessuri.map lan_anon "" /
+    user_add "${CWD}"/basic.htpasswd "${CWD}"/accessuri.map lan_anon "" /
 
     driver=docker
     if command -v podman &>/dev/null; then
@@ -63,13 +63,13 @@ servethis() {
         --expose=8080 -p 8080:8080 \
         -v "$PWD:/home/user/downloads:ro" \
         -v "$PWD:/home/user/uploads:rw" \
-        -v "${cwd}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
-        -v "${cwd}/icons:/var/www/ngxp/icons:ro" \
-        -v "${cwd}/main.js:/var/www/ngxp/main.js:ro" \
-        -v "${cwd}/main.css:/var/www/ngxp/main.css:ro" \
-        -v "${cwd}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
-        -v "${cwd}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
-        -v "${cwd}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
+        -v "${CWD}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
+        -v "${CWD}/icons:/var/www/ngxp/icons:ro" \
+        -v "${CWD}/main.js:/var/www/ngxp/main.js:ro" \
+        -v "${CWD}/main.css:/var/www/ngxp/main.css:ro" \
+        -v "${CWD}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
+        -v "${CWD}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
+        -v "${CWD}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
         nginx
 }
 

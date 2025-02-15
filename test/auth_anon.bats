@@ -1,3 +1,6 @@
+#!/usr/bin/env bats
+bats_require_minimum_version 1.5.0
+
 driver=docker
 if command -v podman &>/dev/null; then
     driver=podman
@@ -8,7 +11,7 @@ setup_file() {
     TEST_DIR=$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )
     ROOT_DIR=${TEST_DIR}/../
 
-    mkdir -p "${TEST_DIR}"/test_runtime/{uploads,download}
+    mkdir -p "${TEST_DIR}"/test_runtime/{uploads_anon,download_anon}
     rm -f "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map}
     touch "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map}
 
@@ -17,7 +20,7 @@ setup_file() {
     "${ROOT_DIR}"/ngxp.sh user_add \
         "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map} hack "toor" /noaccess
 
-    cat > "${TEST_DIR}/test_runtime/nginx.conf" <<EOF
+    cat > "${TEST_DIR}/test_runtime/nginx_anon.conf" <<EOF
     worker_processes 1;
     error_log /var/log/nginx/error.log warn;
     pid /tmp/nginx.pid;
@@ -51,9 +54,9 @@ EOF
         --userns=keep-id --cap-drop=ALL \
         --tmpfs=/tmp:rw,noexec,nosuid,size=70m \
         --expose=8080 -p 8087:8080 \
-        -v "${TEST_DIR}/test_runtime/download:/home/user/downloads:ro" \
-        -v "${TEST_DIR}/test_runtime/uploads:/home/user/uploads:rw" \
-        -v "${TEST_DIR}/test_runtime/nginx.conf:/etc/nginx/nginx.conf:ro" \
+        -v "${TEST_DIR}/test_runtime/download_anon:/home/user/downloads:ro" \
+        -v "${TEST_DIR}/test_runtime/uploads_anon:/home/user/uploads:rw" \
+        -v "${TEST_DIR}/test_runtime/nginx_anon.conf:/etc/nginx/nginx.conf:ro" \
         -v "${ROOT_DIR}:/var/www/ngxp:ro" \
         -v "${ROOT_DIR}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
         -v "${TEST_DIR}/test_runtime/basic_anon.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
@@ -65,6 +68,13 @@ teardown_file() {
     "$driver" stop "bats_nginx_explorer_test_server_anon"
     "$driver" logs "bats_nginx_explorer_test_server_anon" &> "${TEST_DIR}/test_runtime/nginx_anon.log"
     "$driver" rm "bats_nginx_explorer_test_server_anon"
+
+    # remove test outputs (comment this out to see why a test failed)
+    rm -rf \
+        "${TEST_DIR}/test_runtime/nginx_anon.conf" \
+        "${TEST_DIR}"/test_runtime/{basic_anon.htpasswd,accessuri_anon.map} \
+        "${TEST_DIR}/test_runtime/nginx_anon.log" \
+        "${TEST_DIR}"/test_runtime/{uploads_anon,download_anon}
 }
 
 setup() {
@@ -74,6 +84,7 @@ setup() {
 
 @test "responds 200 on GET  /                with local_anon user for listing" {
     curl -f -s -w "%{http_code}\n" -o "${TEST_DIR}"/test_runtime/test_anon_listing1 -X GET http://127.0.0.1:8087/
+    rm -f "${TEST_DIR}"/test_runtime/test_anon_listing1
 }
 @test "responds 401 on GET  /                with a logged in user that change their username in cookie" {
     local cookie;
@@ -82,9 +93,11 @@ setup() {
     cookie=$(echo "$cookie" | sed 's#hack#lan_anon#;s#:/noaccess#:/#')  # cookie transform
     run curl -s -o "${TEST_DIR}"/test_runtime/test_anon_listing2 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8087/
     assert_line '401'
+    rm -f "${TEST_DIR}"/test_runtime/test_anon_listing2
 }
 @test "download file (simple)" {
-    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download_anon1
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download_anon/download_anon1
     curl -s -o "${TEST_DIR}"/test_runtime/test_anon_download1 -w "%{http_code}\n" -X GET http://127.0.0.1:8087/download_anon1
-    cmp "${TEST_DIR}"/test_runtime/download/download_anon1 "${TEST_DIR}"/test_runtime/test_anon_download1
+    cmp "${TEST_DIR}"/test_runtime/download_anon/download_anon1 "${TEST_DIR}"/test_runtime/test_anon_download1
+    rm -f "${TEST_DIR}"/test_runtime/download_anon/download_anon1 "${TEST_DIR}"/test_runtime/test_anon_download1
 }

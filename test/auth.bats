@@ -1,3 +1,6 @@
+#!/usr/bin/env bats
+bats_require_minimum_version 1.5.0
+
 driver=docker
 if command -v podman &>/dev/null; then
     driver=podman
@@ -66,6 +69,12 @@ teardown_file() {
     "$driver" stop "bats_nginx_explorer_test_server"
     "$driver" logs "bats_nginx_explorer_test_server" &> "${TEST_DIR}/test_runtime/nginx.log"
     "$driver" rm "bats_nginx_explorer_test_server"
+
+    rm -rf \
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} \
+        "${TEST_DIR}/test_runtime/nginx.conf" \
+        "${TEST_DIR}/test_runtime/nginx.log" \
+        "${TEST_DIR}"/test_runtime/{uploads,download}
 }
 
 setup() {
@@ -118,6 +127,12 @@ setup() {
     assert_line '401'
     refute_output 'ngxp' # cookie should not be set
 }
+@test "responds 401 on GET  /___ngxp/upload/ with nested user" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/___ngxp/upload/
+    assert_line '401'
+}
 @test "responds 200 on GET  /___ngxp/upload/ with upload user" {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n upload:uploadtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
@@ -129,6 +144,7 @@ setup() {
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n root:roottestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
     curl -f -s -o "${TEST_DIR}"/test_runtime/test_listing1 --cookie "${cookie}" -X GET http://127.0.0.1:8085/
+    rm -f "${TEST_DIR}"/test_runtime/test_listing1
 }
 @test "download file (simple)" {
     local cookie;
@@ -137,6 +153,7 @@ setup() {
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download1
     curl -f -s -o "${TEST_DIR}"/test_runtime/test_download1 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download1
     cmp "${TEST_DIR}"/test_runtime/download/download1 "${TEST_DIR}"/test_runtime/test_download1
+    rm -f "${TEST_DIR}"/test_runtime/download/download1 "${TEST_DIR}"/test_runtime/test_download1
 }
 @test "download file (nested)" {
     local cookie;
@@ -146,6 +163,7 @@ setup() {
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/nested/download2
     curl -f -s -o "${TEST_DIR}"/test_runtime/test_download2 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/nested/download2
     cmp "${TEST_DIR}"/test_runtime/download/nested/download2 "${TEST_DIR}"/test_runtime/test_download2
+    rm -f "${TEST_DIR}"/test_runtime/download/nested/download2 "${TEST_DIR}"/test_runtime/test_download2
 }
 @test "download at root with nested user fails" {
     local cookie;
@@ -154,18 +172,20 @@ setup() {
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download3
     run curl -s -o "${TEST_DIR}"/test_runtime/test_download3 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download3
     assert_line '401'
-    ! cmp "${TEST_DIR}"/test_runtime/download/nested/download3 "${TEST_DIR}"/test_runtime/test_download3
+    ( ! cmp "${TEST_DIR}"/test_runtime/download/download3 "${TEST_DIR}"/test_runtime/test_download3 )
+    rm -f "${TEST_DIR}"/test_runtime/download/download3 "${TEST_DIR}"/test_runtime/test_download3
 }
 @test "download at root with nested user fails (transformed cookie)" {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
-    cookie=$(echo "$cookie" | sed 's#:/nested#:/#')  # cookie transform
+    cookie=${cookie/:\/nested/:\/} # cookie transform
 
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download33
-    run curl -s -o "${TEST_DIR}"/test_runtime/test_download33 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download3
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_download33 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download33
     assert_line '401'
-    ! cmp "${TEST_DIR}"/test_runtime/download/nested/download33 "${TEST_DIR}"/test_runtime/test_download33
+    ( ! cmp "${TEST_DIR}"/test_runtime/download/download33 "${TEST_DIR}"/test_runtime/test_download33 )
+    rm -f "${TEST_DIR}"/test_runtime/download/download33 "${TEST_DIR}"/test_runtime/test_download33
 }
 @test "download at nested with nested user ok" {
     local cookie;
@@ -174,6 +194,7 @@ setup() {
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/nested/download4
     curl -s -o "${TEST_DIR}"/test_runtime/test_download4 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/nested/download4
     cmp "${TEST_DIR}"/test_runtime/download/nested/download4 "${TEST_DIR}"/test_runtime/test_download4
+    rm -f "${TEST_DIR}"/test_runtime/download/nested/download4 "${TEST_DIR}"/test_runtime/test_download4
 }
 @test "upload with nested user fail" {
     local cookie;
@@ -183,8 +204,9 @@ setup() {
     run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -H 'Content-Type: application/octet-stream' -H 'Content-Disposition: attachment; filename="a"' --data-binary @"${TEST_DIR}"/test_runtime/test_upload1 -X POST http://127.0.0.1:8085/___ngxp/upload/
     assert_line '401'
     find "${TEST_DIR}"/test_runtime/uploads/ -type f | while read -r f; do
-        ! cmp "${TEST_DIR}"/test_runtime/test_upload1 "$f"
+        ( ! cmp "${TEST_DIR}"/test_runtime/test_upload1 "$f" )
     done
+    rm -f "${TEST_DIR}"/test_runtime/test_upload1
 }
 @test "upload with upload user ok" {
     local cookie;
@@ -194,4 +216,5 @@ setup() {
     curl -f -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -H 'Content-Type: application/octet-stream' -H 'Content-Disposition: attachment; filename="b"' --data-binary @"${TEST_DIR}"/test_runtime/test_upload2 -X POST http://127.0.0.1:8085/___ngxp/upload/
     sum=$(md5sum "${TEST_DIR}"/test_runtime/test_upload2 | awk '{ print $1 }')
     md5sum "${TEST_DIR}"/test_runtime/uploads/* | awk '{ print $1 }' | grep "$sum"
+    rm -f "${TEST_DIR}"/test_runtime/test_upload2
 }

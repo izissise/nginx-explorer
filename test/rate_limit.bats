@@ -1,11 +1,17 @@
+#!/usr/bin/env bats
+bats_require_minimum_version 1.5.0
+
 driver=docker
 if command -v podman &>/dev/null; then
     driver=podman
 fi
 
 setup_file() {
-    export TEST_DIR=$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )
+    export TEST_DIR
+    TEST_DIR=$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )
     ROOT_DIR=${TEST_DIR}/../
+
+    mkdir -p "${TEST_DIR}"/test_runtime/{uploads_rl,download_rl}
 
     cat > "${TEST_DIR}/test_runtime/nginx_rate_limit.conf" <<EOF
     worker_processes 1;
@@ -40,8 +46,8 @@ EOF
         --userns=keep-id --cap-drop=ALL \
         --tmpfs=/tmp:rw,noexec,nosuid,size=70m \
         --expose=8080 -p 8086:8080 \
-        -v "${TEST_DIR}/test_runtime/download:/home/user/downloads:ro" \
-        -v "${TEST_DIR}/test_runtime/uploads:/home/user/uploads:rw" \
+        -v "${TEST_DIR}/test_runtime/download_rl:/home/user/downloads:ro" \
+        -v "${TEST_DIR}/test_runtime/uploads_rl:/home/user/uploads:rw" \
         -v "${TEST_DIR}/test_runtime/nginx_rate_limit.conf:/etc/nginx/nginx.conf:ro" \
         -v "${ROOT_DIR}:/var/www/ngxp:ro" \
         -v "${ROOT_DIR}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
@@ -54,6 +60,11 @@ teardown_file() {
     "$driver" stop "bats_nginx_explorer_test_server_rate_limit"
     "$driver" logs "bats_nginx_explorer_test_server_rate_limit" &> "${TEST_DIR}/test_runtime/nginx_rate_limit.log"
     "$driver" rm "bats_nginx_explorer_test_server_rate_limit"
+
+    rm -rf \
+        "${TEST_DIR}/test_runtime/nginx_rate_limit.conf" \
+        "${TEST_DIR}/test_runtime/nginx_rate_limit.log" \
+        "${TEST_DIR}"/test_runtime/{uploads_rl,download_rl}
 }
 
 setup() {
