@@ -5,6 +5,19 @@ set -eu
 CWD=$(cd "${0%/*}" && pwd)
 
 test() {
+    local bats_version="1.11.1"
+    local bats_support_version="0.3.0"
+    local bats_assert_version="2.1.0"
+    mkdir -p "$CWD"/test/bats/{bats-assert,bats-support}
+    if [ ! -f "$CWD"/test/bats/bin/bats ]; then
+        curl -f -s -L "https://github.com/bats-core/bats-assert/archive/v${bats_support_version}.tar.gz" -o - \
+            | tar --strip-components=1 -C "${CWD}/test/bats/bats-support" -xzf -
+        curl -f -s -L "https://github.com/bats-core/bats-assert/archive/v${bats_assert_version}.tar.gz" -o - \
+            | tar --strip-components=1 -C "${CWD}/test/bats/bats-assert" -xzf -
+        curl -f -s -L "https://github.com/bats-core/bats-core/archive/v${bats_version}.tar.gz" -o - \
+            | tar --strip-components=1 -C "${CWD}/test/bats" -xzf -
+    fi
+
     "$CWD"/test/bats/bin/bats --jobs 24 test/*.bats
 }
 
@@ -13,7 +26,7 @@ download_icons() {
     if [ ! -d "${CWD}/icons" ]; then
         echo 'Downloading icons'
         mkdir "${CWD}/icons"
-        curl -s -L "https://github.com/KDE/breeze-icons/archive/v${breeze_icon_version}.tar.gz" -o - \
+        curl -f -s -L "https://github.com/KDE/breeze-icons/archive/v${breeze_icon_version}.tar.gz" -o - \
             | tar -C "${CWD}/icons" -xzf - "breeze-icons-${breeze_icon_version}/icons/mimetypes/32" "breeze-icons-${breeze_icon_version}/icons/places/32" --strip-components=4
         mv "${CWD}/icons/folder-cloud.svg" "${CWD}/icons/folder.svg"
     else

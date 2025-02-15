@@ -316,4 +316,5 @@ bower_components
 /icons
 /basic.htpasswd
 /accessuri.map
+/test/bats
 /test/test_runtime

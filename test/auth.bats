@@ -78,8 +78,8 @@ teardown_file() {
 }
 
 setup() {
-    load 'test_helper/bats-support/load'
-    load 'test_helper/bats-assert/load'
+    load 'bats/bats-support/load'
+    load 'bats/bats-assert/load'
 }
 
 @test "responds 401 on GET  /                without cookie" {
