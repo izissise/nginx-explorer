@@ -18,7 +18,7 @@ test() {
             | tar --strip-components=1 -C "${CWD}/test/bats" -xzf -
     fi
 
-    "$CWD"/test/bats/bin/bats --jobs 24 test/*.bats
+    "$CWD"/test/bats/bin/bats --jobs 30 test/*.bats
 }
 
 download_icons() {
@@ -114,16 +114,17 @@ upload_fixup() {
 }
 
 user_add() {
-    if [ ! $# -eq 5 ]; then
-        printf '%s\n' "$0 ${FUNCNAME[0]} passwdfile accessfile username passsword accessuri"
+    if [ $# -lt 5 ]; then
+        printf '%s\n' "$0 ${FUNCNAME[0]} passwdfile accessfile username passsword accessuri..."
         exit 1
     fi
-
-    passwdfile=$1
-    accessfile=$2
-    user=$3
-    pass=$4
-    accessuri=$5
+    local \
+        passwdfile=$1 \
+        accessfile=$2 \
+        user=$3 \
+        pass=$4 \
+        access_val
+    shift 4 # $@ path accesses
 
     passhash=$(openssl passwd -5 "$pass")
     secret=$(openssl rand -hex 64)
@@ -135,7 +136,12 @@ user_add() {
 
 
     sed -i "/^${user} /d" "$accessfile"
-    printf '%s %s|%s|%s;\n' "$user" "$user" "$secret" "$access" >> "$accessfile"
+    # accessuri lines
+    {
+        local IFS='|';
+        access_val=$*
+    }
+    printf '%s %s|%s|%s;\n' "$user" "$user" "$secret" "$access_val" >> "$accessfile"
 }
 
 if [ $# -eq 0 ]; then

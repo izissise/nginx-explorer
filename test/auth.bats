@@ -21,6 +21,8 @@ setup_file() {
         "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} nested nestedtestpass /nested
     "${ROOT_DIR}"/ngxp.sh user_add \
         "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} upload uploadtestpass /___ngxp/upload/
+    "${ROOT_DIR}"/ngxp.sh user_add \
+        "${TEST_DIR}"/test_runtime/{basic.htpasswd,accessuri.map} mpath mpathtestpass /mpath/1 /mpath/3 /mpath/four
 
     cat > "${TEST_DIR}/test_runtime/nginx.conf" <<EOF
     worker_processes 1;
@@ -217,4 +219,40 @@ setup() {
     sum=$(md5sum "${TEST_DIR}"/test_runtime/test_upload2 | awk '{ print $1 }')
     md5sum "${TEST_DIR}"/test_runtime/uploads/* | awk '{ print $1 }' | grep "$sum"
     rm -f "${TEST_DIR}"/test_runtime/test_upload2
+}
+@test "download at multiple path tree" {
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n mpath:mpathtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    mkdir -p "${TEST_DIR}"/test_runtime/download/mpath/{1,2,3}
+
+    head -c 512 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/mpath/1/file
+    head -c 512 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/mpath/2/file
+    head -c 512 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/mpath/3/file
+    head -c 512 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/mpath/four
+    head -c 512 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/mpath/five
+
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_mpath1 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/mpath/1/file
+    assert_line '200'
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_mpath2 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/mpath/2/file
+    assert_line '401'
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_mpath3 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/mpath/3/file
+    assert_line '200'
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_mpath4 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/mpath/four
+    assert_line '200'
+    run curl -s -o "${TEST_DIR}"/test_runtime/test_mpath5 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/mpath/five
+    assert_line '401'
+
+    cmp "${TEST_DIR}"/test_runtime/download/mpath/1/file "${TEST_DIR}"/test_runtime/test_mpath1
+    ( ! cmp "${TEST_DIR}"/test_runtime/download/mpath/2/file "${TEST_DIR}"/test_runtime/test_mpath2 )
+    cmp "${TEST_DIR}"/test_runtime/download/mpath/3/file "${TEST_DIR}"/test_runtime/test_mpath3
+    cmp "${TEST_DIR}"/test_runtime/download/mpath/four "${TEST_DIR}"/test_runtime/test_mpath4
+    ( ! cmp "${TEST_DIR}"/test_runtime/download/mpath/five "${TEST_DIR}"/test_runtime/test_mpath5 )
+
+    rm -f \
+        "${TEST_DIR}"/test_runtime/download/mpath/1/file "${TEST_DIR}"/test_runtime/test_mpath1 \
+        "${TEST_DIR}"/test_runtime/download/mpath/2/file "${TEST_DIR}"/test_runtime/test_mpath2 \
+        "${TEST_DIR}"/test_runtime/download/mpath/3/file "${TEST_DIR}"/test_runtime/test_mpath3 \
+        "${TEST_DIR}"/test_runtime/download/mpath/four "${TEST_DIR}"/test_runtime/test_mpath4 \
+        "${TEST_DIR}"/test_runtime/download/mpath/five "${TEST_DIR}"/test_runtime/test_mpath5
 }
