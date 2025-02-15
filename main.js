@@ -183,6 +183,18 @@ function sort_table(theads, tbodies, column, descending) {
     }
 }
 
+function create_table(headers, entries) {
+    return el('table', { border: 1, cellpadding: 1, cellspacing: 1 }, [
+        el('thead', { id: 'fthead' }, headers.map((f, idx) => el('th', {
+            role: 'colheader',
+            innerText: f
+        }, [], {
+            'onclick': "sort_table(dom('#fthead'), dom('#ftbody'), {0}, this.dataset.sortway == 'ascending')".format(idx),
+        }))),
+        el('tbody', { id: 'ftbody' }, entries, { 'item_count': entries.length }),
+    ]);
+}
+
 function setup_files() {
     var now = new Date().getTime();
     var date_format = g_this_script.attributes['date-format'].value;
@@ -233,15 +245,7 @@ function setup_files() {
         format_size(data[2]),
         format_date(data[3], now, date_format == 'seconds'),
     ]));
-    var table = el('table', { border: 1, cellpadding: 1, cellspacing: 1 }, [
-        el('thead', { id: 'fthead' }, ['Filename', 'Size', 'Date'].map((f, idx) => el('th', {
-            role: 'colheader',
-            innerText: f
-        }, [], {
-            'onclick': "sort_table(dom('#fthead'), dom('#ftbody'), {0}, this.dataset.sortway == 'ascending')".format(idx),
-        }))),
-        el('tbody', { id: 'ftbody' }, entries, { 'item_count': entries.length }),
-    ]);
+    var table = create_table(['Filename', 'Size', 'Date'], entries);
 
     // remove everything except menu and auth_form
     Array.from(body.children).forEach((c) => {
