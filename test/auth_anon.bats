@@ -90,7 +90,7 @@ setup() {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n hack:toor | base64)" http://127.0.0.1:8087/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
-    cookie=$(echo "$cookie" | sed 's#hack#lan_anon#;s#:/noaccess#:/#')  # cookie transform
+    cookie=$(echo "$cookie" | sed 's#hack#lan_anon#;s#|/noaccess#|/#')  # cookie transform
     run curl -s -o "${TEST_DIR}"/test_runtime/test_anon_listing2 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8087/
     assert_line '401'
     rm -f "${TEST_DIR}"/test_runtime/test_anon_listing2

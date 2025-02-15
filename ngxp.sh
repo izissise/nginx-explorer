@@ -135,8 +135,7 @@ user_add() {
 
 
     sed -i "/^${user} /d" "$accessfile"
-    # accessuri line
-    printf '%s %s:%s:%s;\n' "$user" "$user" "$secret" "$accessuri" >> "$accessfile"
+    printf '%s %s|%s|%s;\n' "$user" "$user" "$secret" "$access" >> "$accessfile"
 }
 
 if [ $# -eq 0 ]; then

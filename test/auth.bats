@@ -179,7 +179,7 @@ setup() {
     local cookie;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
-    cookie=${cookie/:\/nested/:\/} # cookie transform
+    cookie=${cookie/|\/nested/|\/} # cookie transform
 
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/download33
     run curl -s -o "${TEST_DIR}"/test_runtime/test_download33 -w "%{http_code}\n" --cookie "${cookie}" -X GET http://127.0.0.1:8085/download33
