@@ -273,3 +273,17 @@ setup() {
 
     rm -rf "${TEST_DIR}"/test_runtime/download/{abc,ab,a}
 }
+@test "cannot craft url to get access" {
+    # in the access rex modifying the first part like so (spaces added for lisibility)
+    # from: ^(|[^\x5c]*\|)([^\|]+)(\x5c|\|[^\x5c]*\x5c)\2((?<=\/)|$|\/).*$
+    # to:   ^(|.*\|)      ([^\|]+)(\x5c|\|[^\x5c]*\x5c)\2((?<=\/)|$|\/).*$
+    # give access to the secret because the attacker can control where the separator (\) will be
+
+    local cookie;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n nested:nestedtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    head -c 512 < /dev/urandom > "${TEST_DIR}"/test_runtime/download/secret1
+
+    run curl -s -o /dev/null -w "%{http_code}\n" --cookie "${cookie}" -X GET 'http://127.0.0.1:8085/|/secret1\/secret1'
+    assert_line '401'
+}
