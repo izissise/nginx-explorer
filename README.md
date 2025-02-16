@@ -8,9 +8,11 @@ Features:
 - download files
 - upload file
 - basic auth
-- per uri access
+- per uri access (multi tree)
+- fast html table
 - media
 - auto sort
+- unit tests
 
 see [nginx-explorer.conf](https://github.com/izissise/nginx-explorer/blob/master/nginx-explorer.conf)
 
@@ -25,4 +27,4 @@ nginx-explorer/ngxp.sh servethis
 # Upload
 
 Uploaded files arrive chunked,
-you can concatenate back using `./ngxp.sh upload_fixup`
+you can concatenate them back with `./ngxp.sh upload_fixup`
