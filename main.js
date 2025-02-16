@@ -221,11 +221,11 @@ function setup_files() {
         }
         var new_pre = el('pre', {},
             accesses.filter((a) => a != upload)
-                .map((a) => el('a', {
+                .map((a) => [el('a', {
                     href: a[a.length - 1] == '/' ? a : a + '/',
                     innerText: a,
-                }, [], {})
-            )
+                }, [], {}), document.createTextNode("\n")]
+            ).flat()
         );
         body.appendChild(new_pre);
     }

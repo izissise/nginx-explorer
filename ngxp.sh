@@ -36,7 +36,7 @@ download_icons() {
 
 dev() {
     user_add basic.htpasswd accessuri.map root pass /
-    user_add basic.htpasswd accessuri.map sub pass /sub
+    user_add basic.htpasswd accessuri.map sub pass /sub /sub
     user_add basic.htpasswd accessuri.map upload pass /___ngxp/upload
     user_add basic.htpasswd accessuri.map xx pass /sub /___ngxp/upload
 
