@@ -6,6 +6,24 @@ if command -v podman &>/dev/null; then
     driver=podman
 fi
 
+# https://regex101.com
+# map ${user_cookie_accesses}\\${uri} $uri_access rex
+# SHOULD MATCH
+# /\/
+# /nested\/nested/
+# /___ngxp/upload/\/___ngxp/upload/
+# /mpath/1|/mpath/3|/mpath/four\/mpath/1/
+# /mpath/1|/mpath/3|/mpath/four\/mpath/3/
+# /mpath/1|/mpath/3|/mpath/four\/mpath/four/ddd
+# /abc|/a\/abc/
+# /\/download1
+# SHOULD NOT MATCH
+# /nested\/nes
+# /mpath/1|/mpath/3|/mpath/four\/mapth/1/file
+# /abc|/a\/ab/
+# /abc|/a\|/secreta\/secreta
+# /abc|/a\/ab/no
+
 setup_file() {
     export TEST_DIR
     TEST_DIR=$( cd "${BATS_TEST_FILENAME%/*}" >/dev/null 2>&1 && pwd )
