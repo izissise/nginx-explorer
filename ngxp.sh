@@ -62,6 +62,7 @@ dev() {
         -v "${CWD}/test/qunit.html:/var/www/ngxp/qunit.html:ro" \
         -v "${CWD}/test/table.js:/var/www/ngxp/table.js:ro" \
         nginx
+        # nginx nginx-debug -g 'daemon off;' #     error_log /var/log/nginx/error.log debug;
 }
 
 servethis() {

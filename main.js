@@ -11,8 +11,8 @@ function dom(select) {
 }
 
 // if file is a service worker
-if (this.document) {
-    var g_this_script = Array.from(dom('script')).filter((s) => s.hasAttribute('name'))[0];
+if (this.document && g_this_script !== 'inside_test') {
+    var g_this_script = g_this_script || Array.from(dom('script')).filter((s) => s.hasAttribute('name'))[0];
     var g_icon_base = null;
 
     onWindowLoad(setup_menu);
@@ -20,7 +20,9 @@ if (this.document) {
     onWindowLoad(setup_files);
     onWindowLoad(setup_page);
     onWindowLoad(setup_upload);
-    onWindowLoad(setup_test);
+    if (g_this_script.attributes['env'].value == 'test') {
+        onWindowLoad(setup_test);
+    }
 }
 
 function el(tag, props, ch, attrs) {

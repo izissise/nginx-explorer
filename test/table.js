@@ -1,4 +1,4 @@
-
+var g_this_script = 'inside_test';
 dynamic_script_load([base + 'main.js']).then(() => {
 
 QUnit.module('table', function() {
@@ -7,7 +7,6 @@ QUnit.module('table', function() {
                 el('tr', {}, [el('td', { innerText: "1" }), el('td', { innerText: "2" })]),
                 el('tr', {}, [el('td', { innerText: "3" }), el('td', { innerText: "4" })]),
             ]);
-            console.log(table);
             assert.equal(2, table.childElementCount); // thead and tbody
             var thead = table.childNodes[0];
             assert.equal(thead.childNodes[0].innerText, "A");
