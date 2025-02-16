@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>QUnit</title>
+<link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.24.1.css">
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="https://code.jquery.com/qunit/qunit-2.24.1.js"></script>
+  <script>
+        QUnit.config.autostart = false;
+
+        var tests = [
+            'table.js',
+        ];
+
+        function dynamic_script_load(urls, index = 0) {
+            return new Promise((resolve, reject) => {
+                if (index >= urls.length) {
+                    return reject("all script URLs failed to load.");
+                }
+                var script = document.createElement('script');
+                script.src = urls[index];
+                script.addEventListener("load", function() {
+                    console.log(`Script loaded successfully from ${urls[index]}`);
+                    resolve(urls[index]);
+                });
+                script.addEventListener("error", function() {
+                    console.error(`Failed to load script from ${urls[index]}. Trying next URL...`);
+                    dynamic_script_load(urls, index + 1).then(resolve, reject); // Try the next URL
+                });
+                document.head.appendChild(script);
+            });
+        }
+        var path = window.location.pathname;
+        var base = path.substring(0, path.lastIndexOf('/') + 1);
+        Promise.all(
+            tests.map((s) => dynamic_script_load([base + s]))
+        ).then(() => QUnit.start());
+  </script>
+</body>
+</html>

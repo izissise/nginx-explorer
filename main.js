@@ -20,6 +20,7 @@ if (this.document) {
     onWindowLoad(setup_files);
     onWindowLoad(setup_page);
     onWindowLoad(setup_upload);
+    onWindowLoad(setup_test);
 }
 
 function el(tag, props, ch, attrs) {
@@ -365,6 +366,7 @@ function setup_menu() {
         el('input', { type: 'button', value: "🔐", title: 'login' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
         el('input', { type: 'button', value: "📤", title: 'upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
         el('input', { type: 'button', value: "🛋️", title: 'media mode' }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
+        el('input', { type: 'button', value: "🧪", title: 'unit test page' }, [], { 'class': 'hide' }),
         el('span', { id: 'status', innerText: status }),
 
     ]);
@@ -393,6 +395,11 @@ function menu_has_media() {
     var menu = dom('#menu')[0];
     menu.children[3].classList.remove('hide');
 }
+function menu_has_test(location) {
+    var menu = dom('#menu')[0];
+    menu.children[4].onclick = () => { window.location.href="{0}".format(location) };
+    menu.children[4].classList.remove('hide');
+}
 
 function menu_need_auth() {
     var menu = dom('#menu')[0];
@@ -410,6 +417,19 @@ function el_hide_toggle(el) {
 
 function menu_toggle(_ev, id) {
     el_hide_toggle(dom('#' + id)[0]);
+}
+
+/* Test */
+
+function setup_test() {
+    var s = g_this_script.attributes['src'].value;
+    var qunit = s.substring(0, s.lastIndexOf('/') + 1) + 'qunit.html';
+
+    fetch(qunit).then((response) => {
+        if (response.ok) {
+            menu_has_test(qunit);
+        }
+    });
 }
 
 /* AUTH */

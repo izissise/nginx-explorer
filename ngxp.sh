@@ -54,11 +54,13 @@ dev() {
         -v "$HOME/Downloads/receive:/home/user/uploads:rw" \
         -v "${CWD}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
         -v "${CWD}/icons:/var/www/ngxp/icons:ro" \
-        -v "${CWD}/main.js:/var/www/ngxp/main.js:ro" \
-        -v "${CWD}/main.css:/var/www/ngxp/main.css:ro" \
         -v "${CWD}/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
         -v "${CWD}/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
         -v "${CWD}/accessuri.map:/opt/ngxp/accessuri.map:ro" \
+        -v "${CWD}/main.css:/var/www/ngxp/main.css:ro" \
+        -v "${CWD}/main.js:/var/www/ngxp/main.js:ro" \
+        -v "${CWD}/test/qunit.html:/var/www/ngxp/qunit.html:ro" \
+        -v "${CWD}/test/table.js:/var/www/ngxp/table.js:ro" \
         nginx
 }
 
