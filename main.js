@@ -186,7 +186,7 @@ function sort_table(theads, tbodies, column, descending) {
     }
 }
 
-function create_table(headers, entries) {
+function table(headers, entries) {
     return el('table', { border: 1, cellpadding: 1, cellspacing: 1 }, [
         el('thead', { id: 'fthead' }, headers.map((f, idx) => el('th', {
             role: 'colheader',
@@ -198,10 +198,28 @@ function create_table(headers, entries) {
     ]);
 }
 
+function insert_accesses(accesses) {
+    var accesses = accesses.filter((a) => !a.startsWith('/___ngxp/'));
+    if (accesses.length == 0) {
+        return false;
+    }
+    if (accesses.some((a) => document.location.pathname.startsWith(a))) {
+        return true; // just an empty directory we have access
+    }
+    return el('pre', {},
+        accesses.map((a) => [el('a', {
+                href: a[a.length - 1] == '/' ? a : a + '/',
+                innerText: a,
+            }, [], {}), document.createTextNode("\n")]
+        ).flat()
+    );
+}
+
 function setup_files() {
     var now = new Date().getTime();
     var date_format = g_this_script.attributes['date-format'].value;
     var user = g_this_script.attributes['user'].value;
+    var accesses = Array.from(g_this_script.attributes['accesses'].value.split('|'));
     g_icon_base = g_this_script.attributes['icons'].value;
 
     var fext_cnt = {};
@@ -209,25 +227,16 @@ function setup_files() {
     var fpre_length = 4;
 
     var body = dom('body')[0];
-    if (dom('pre').length == 0) { // nothing, probably unauthorized, tell menu
-        var accesses = Array.from(g_this_script.attributes['accesses'].value.split('|'));
-        var upload = g_this_script.attributes['upload'].value;
-        if (accesses.length == 0 || (accesses.length == 1 && accesses[0] == upload)) {
+    if (dom('pre').length == 0) { // nothing, probably unauthorized, insert or tell menu
+        var pre_opt = insert_accesses(accesses);
+        if (pre_opt === false) {
             menu_need_auth();
             return;
+        } else if (pre_opt === true) {
+            return;
+        } else {
+            body.appendChild(pre_opt);
         }
-        if (accesses.some((a) => document.location.pathname.startsWith(a))) {
-            return; // just an empty directory we have access
-        }
-        var new_pre = el('pre', {},
-            accesses.filter((a) => a != upload)
-                .map((a) => [el('a', {
-                    href: a[a.length - 1] == '/' ? a : a + '/',
-                    innerText: a,
-                }, [], {}), document.createTextNode("\n")]
-            ).flat()
-        );
-        body.appendChild(new_pre);
     }
     menu_has_auth(!['wan_anon', 'local_anon', ''].includes(user));
     var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
@@ -248,7 +257,7 @@ function setup_files() {
         format_size(data[2]),
         format_date(data[3], now, date_format == 'seconds'),
     ]));
-    var table = create_table(['Filename', 'Size', 'Date'], entries);
+    var table = table(['Filename', 'Size', 'Date'], entries);
 
     // remove everything except menu and auth_form
     Array.from(body.children).forEach((c) => {
