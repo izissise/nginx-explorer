@@ -542,7 +542,7 @@ function setup_upload() {
         var updiv = el('div', { id: 'upload_form' }, [
             el('form', {}, [
                 el('input', { name: 'File', type: 'file' }, [], { "multiple": "multiple" }),
-                el('input', { type: 'button', value: 'Upload' }, [], { 'onclick': 'upload_start(event);' }),
+                el('input', { type: 'button', value: 'Upload' }, [], { 'onclick': 'upload_form_start(event);' }),
             ], { 'class': 'form' }),
             el('table', { border: 1, cellpadding: 1, cellspacing: 1 }, [
                 el('thead', { id: 'fthead' }, ['Filename', 'Progress'].map((f) => el('th', { innerText: f }))),
@@ -566,11 +566,11 @@ function uploade_etc_and_speed(now, transfer_size, transferred_size, last_transf
     return [estimate_to_completion, speed];
 }
 
-function up_progress([e, [upprogress, _]]) {
+function up_progress([e, [ui_span, _]]) {
     var ftotal = e.total == 0 ? 1 : e.total;
     var floaded = e.loaded == 0 ? 1 : e.loaded;
     var perc = Math.floor((floaded / ftotal) * 100);
-    var bar = upprogress.children[0];
+    var bar = ui_span.children[0];
     var last_transferred_date = bar.dataset.lasttransferreddate;
     if (last_transferred_date === undefined) {
         last_transferred_date = e.timeStamp;
@@ -586,13 +586,15 @@ function up_progress([e, [upprogress, _]]) {
     bar.dataset.lasttransferreddate = e.timeStamp;
     bar.dataset.lasttransferredsize = floaded;
 };
-function up_success([xhr, [upprogress, _]]) {
+function up_success([xhr, [ui_span, _]]) {
     console.log('Success - server responded with:', xhr.responseText);
-    upprogress.children[1].innerText = '\u2713';
+    ui_span.children[1].innerText = '\u2713';
+    return xhr.responseText;
 };
-function up_error([xhr, [upprogress, _]]) {
+function up_error([xhr, [ui_span, _]]) {
     console.error('A server error occurred:', xhr.responseText); // Could retry at this stage depending on xhr.status
-    upprogress.children[1].innerText = '\u274C';
+    ui_span.children[1].innerText = '\u274C';
+    return xhr.responseText;
 };
 
 function up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno) {
@@ -619,7 +621,7 @@ function up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno) {
     return meta;
 }
 
-function upload_start(ev) {
+function upload_form_start(ev) {
     if (upload_func === null) {
         console.error("Handle upload func is null");
         return;
@@ -629,7 +631,6 @@ function upload_start(ev) {
     var table = form.parentNode.children[1];
     table.classList.remove("hide");
     var file = form.children[0];
-
     Array.from(file.files).forEach((f) => {
         var up_progress_el = el('span', {}, [
             el('progress', { max: 100, value: 0 }),
@@ -643,59 +644,66 @@ function upload_start(ev) {
             el('td', {}, [up_progress_el]),
         ]);
         table.appendChild(upentry);
+        upload_ngxp_file(f, up_progress_el, upload_func, upload_endpoint, upload_max_size);
+    });
+    form.reset();
+}
 
-        var chunk_cnt = 1;
-        var chunk_size = f.size;
-        var chunk_last_size = 0;
-        if (upload_max_size > 0 && f.size > upload_max_size) {
-            // upload in chunks
-            chunk_cnt = Math.ceil(f.size / upload_max_size);
-            chunk_size = Math.floor(f.size / chunk_cnt);
-            if ((chunk_cnt * chunk_size) < f.size) {
-                chunk_last_size = f.size - (chunk_cnt * chunk_size);
-                chunk_cnt += 1;
-            }
-            console.log('Chunked upload -> Filesize: {0} ChunkCnt: {1} ChunkSz: {2} ChunkLastSz: {3}'.format(f.size, chunk_cnt, chunk_size, chunk_last_size));
+function upload_ngxp_file(f, ui_span, upload_func, upload_endpoint, upload_max_size) {
+    var chunk_cnt = 1;
+    var chunk_size = f.size;
+    var chunk_last_size = 0;
+    if (upload_max_size > 0 && f.size > upload_max_size) {
+        // upload in chunks
+        chunk_cnt = Math.ceil(f.size / upload_max_size);
+        chunk_size = Math.floor(f.size / chunk_cnt);
+        chunk_last_size = f.size - (chunk_cnt * chunk_size);
+        while (chunk_last_size >= chunk_size) {
+            chunk_last_size -= chunk_size;
+            chunk_cnt += 1;
         }
+        if (chunk_last_size > 0) {
+            chunk_cnt += 1;
+        }
+        console.log('Chunked upload -> Filesize: {0} ChunkCnt: {1} ChunkSz: {2} ChunkLastSz: {3} upload_max_size: {4}'.format(f.size, chunk_cnt, chunk_size, chunk_last_size, upload_max_size));
+    }
 
-        //start real upload
-        var seeker = 0;
-        up_progress_el.children[1].innerText = '◌';
-        var promise_chain = Promise.resolve(([null, [up_progress_el, []]]));
-        for (var i = 0; i < chunk_cnt; i++) {
-            let chunk_txt = '◌';
-            if (chunk_cnt > 1) {
-                chunk_txt = '{0}/{1}'.format(i + 1, chunk_cnt);
-            }
-            var chsz = chunk_size;
-            if ((seeker + chsz) > f.size) {
-                chsz = chunk_last_size;
-            }
-            let chunk = f.slice(seeker, seeker + chsz);
-            seeker += chsz;
-            promise_chain = promise_chain.then(([xhr, [up_progress_el, chunk_fileno]]) => {
-                if (xhr !== null) {
-                    chunk_fileno.push(xhr.responseText);
-                }
-                up_progress_el.children[1].innerText = chunk_txt;
-                return upload_func(
-                    upload_endpoint, chunk, up_progress, [up_progress_el, chunk_fileno]
-                );
-            });
+    //start real upload
+    var seeker = 0;
+    ui_span.children[1].innerText = '◌';
+    var promise_chain = Promise.resolve(([null, [ui_span, []]]));
+    for (var i = 0; i < chunk_cnt; i++) {
+        let chunk_txt = '◌';
+        if (chunk_cnt > 1) {
+            chunk_txt = '{0}/{1}'.format(i + 1, chunk_cnt);
         }
-        // finally upload meta file
-        promise_chain.then(([xhr, [up_progress_el, chunk_fileno]]) => {
+        var chsz = chunk_size;
+        if ((seeker + chsz) > f.size) {
+            chsz = chunk_last_size;
+        }
+        let chunk = f.slice(seeker, seeker + chsz);
+        seeker += chsz;
+        promise_chain = promise_chain.then(([xhr, [ui_span, chunk_fileno]]) => {
             if (xhr !== null) {
                 chunk_fileno.push(xhr.responseText);
             }
-            up_progress_el.children[1].innerText = chunk_txt;
+            ui_span.children[1].innerText = chunk_txt;
             return upload_func(
-                upload_endpoint, up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno), up_progress, [up_progress_el, chunk_fileno]
+                upload_endpoint, chunk, up_progress, [ui_span, chunk_fileno]
             );
-        }).then(up_success, up_error);
-
-    });
-    form.reset();
+        });
+    }
+    // finally upload meta file
+    return promise_chain.then(([xhr, [ui_span, chunk_fileno]]) => {
+        if (xhr !== null) {
+            chunk_fileno.push(xhr.responseText);
+        }
+        ui_span.children[1].innerText = '⏺';
+        var meta = up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno);
+        return upload_func(
+            upload_endpoint, meta, up_progress, [ui_span, chunk_fileno]
+        );
+    }).then(up_success, up_error);
 }
 
 function upload_raw(url, file, progress, cb_data) {
