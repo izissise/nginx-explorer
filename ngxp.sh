@@ -37,7 +37,7 @@ download_icons() {
 dev() {
     user_add basic.htpasswd accessuri.map root pass /
     user_add basic.htpasswd accessuri.map sub pass /sub /sub
-    user_add basic.htpasswd accessuri.map upload pass /___ngxp/upload
+    user_add basic.htpasswd accessuri.map upload pass /___ngxp/upload /uploads
     user_add basic.htpasswd accessuri.map xx pass /sub /___ngxp/upload
 
     driver=docker
@@ -51,6 +51,7 @@ dev() {
         --tmpfs=/tmp:rw,noexec,nosuid,size=70m \
         --expose=8080 -p 8080:8080 \
         -v "$HOME/Downloads:/home/user/downloads:ro" \
+        -v "$HOME/Downloads/receive:/home/user/downloads/uploads:ro" \
         -v "$HOME/Downloads/receive:/home/user/uploads:rw" \
         -v "${CWD}/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
         -v "${CWD}/icons:/var/www/ngxp/icons:ro" \

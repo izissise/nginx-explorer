@@ -198,6 +198,32 @@ function table(headers, entries) {
     ]);
 }
 
+function parse_entries(inp, now, date_format) {
+    var fpre_length = 4;
+    var fpre_cnt = {};
+    var fext_cnt = {};
+
+    var e = inp.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
+        entry = entry.split('</a>');
+        var link = entry[0].split('">');
+        var link = decodeURIComponent(link[0].substr(9)); // <a href="
+        var name = link;
+        entry = entry[1].trim().split(/\s+/);
+        var date = new Date(entry[0] + ' ' + entry[1]).getTime();
+        var size = (entry[2] == '-' || entry.length < 3) ? 0 : parseInt(entry[2]);
+        var fpre = name.substr(0, fpre_length);
+        var fext = file_ext(link);
+        fpre_cnt[fpre] = (fpre_cnt[fpre] ? fpre_cnt[fpre] : 0) + 1;
+        fext_cnt[fext] = (fext_cnt[fext] ? fext_cnt[fext] : 0) + 1;
+        return [name, link, size, date];
+    }).map((data) => el('tr', {}, [
+        format_name(data[0], data[1]),
+        format_size(data[2]),
+        format_date(data[3], now, date_format == 'seconds'),
+    ]));
+    return [e, fpre_cnt, fext_cnt];
+}
+
 function insert_accesses(accesses) {
     var accesses = accesses.filter((a) => !a.startsWith('/___ngxp/'));
     if (accesses.length == 0) {
@@ -215,62 +241,10 @@ function insert_accesses(accesses) {
     );
 }
 
-function setup_files() {
-    var now = new Date().getTime();
-    var date_format = g_this_script.attributes['date-format'].value;
-    var user = g_this_script.attributes['user'].value;
-    var accesses = Array.from(g_this_script.attributes['accesses'].value.split('|'));
-    g_icon_base = g_this_script.attributes['icons'].value;
-
-    var fext_cnt = {};
-    var fpre_cnt = {};
-    var fpre_length = 4;
-
-    var body = dom('body')[0];
-    if (dom('pre').length == 0) { // nothing, probably unauthorized, insert or tell menu
-        var pre_opt = insert_accesses(accesses);
-        if (pre_opt === false) {
-            menu_need_auth();
-            return;
-        } else if (pre_opt === true) {
-            return;
-        } else {
-            body.appendChild(pre_opt);
-        }
-    }
-    menu_has_auth(!['wan_anon', 'local_anon', ''].includes(user));
-    var entries = dom('pre')[0].innerHTML.split('\n').filter((l) => l.length > 0 && l != '<a href="../">../</a>').map((entry) => {
-        entry = entry.split('</a>');
-        var link = entry[0].split('">');
-        var link = decodeURIComponent(link[0].substr(9)); // <a href="
-        var name = link;
-        entry = entry[1].trim().split(/\s+/);
-        var date = new Date(entry[0] + ' ' + entry[1]).getTime();
-        var size = (entry[2] == '-' || entry.length < 3) ? 0 : parseInt(entry[2]);
-        var pre = name.substr(0, fpre_length);
-        var ext = file_ext(link);
-        fpre_cnt[pre] = (fpre_cnt[pre] ? fpre_cnt[pre] : 0) + 1;
-        fext_cnt[ext] = (fext_cnt[ext] ? fext_cnt[ext] : 0) + 1;
-        return [name, link, size, date];
-    }).map((data) => el('tr', {}, [
-        format_name(data[0], data[1]),
-        format_size(data[2]),
-        format_date(data[3], now, date_format == 'seconds'),
-    ]));
-    var table = table(['Filename', 'Size', 'Date'], entries);
-
-    // remove everything except menu and auth_form
-    Array.from(body.children).forEach((c) => {
-        if (!['menu', 'auth_form', 'status'].includes(c.id)) {
-            body.removeChild(c);
-        }
-    })
-    body.appendChild(table);
-
+function files_stats_auto_sort(fpre_cnt, fext_cnt, fcount) {
     var uitype = 'default';
     var getcnt = (list) => list.reduce((acc, key) => acc + ((fext_cnt[key] !== undefined) ? fext_cnt[key] : 0), 0);
     var fwithprefix = Math.max.apply(null, Object.values(fpre_cnt));
-    var fcount = entries.length;
     var vids = getcnt(['mkv', 'avi', 'webm', 'mov', 'mp4', 'ogg']);
     var imgs = getcnt(['gif', 'png', 'jpeg', 'jpg', 'tiff', 'bpm']);
     var audios = getcnt(['mp3', 'wav', 'ogg', 'aac']);
@@ -281,24 +255,63 @@ function setup_files() {
     } else if (vids == 1 && ((fcount < 6) || (getcnt(['nfo']) > 0))) {
         uitype = 'tvshow_episode';
     }
+    var has_media = (vids + imgs + audios) > 0;
+    return [uitype, has_media];
+}
+
+function setup_files() {
+    var now = new Date().getTime();
+    var date_format = g_this_script.attributes['date-format'].value;
+    var user = g_this_script.attributes['user'].value;
+    var accesses = Array.from(g_this_script.attributes['accesses'].value.split('|'));
+    g_icon_base = g_this_script.attributes['icons'].value;
+
+    var body = dom('body')[0];
+    var pre = dom('pre');
+    if (pre.length == 0) { // nothing, probably unauthorized, insert or tell menu
+        var pre_opt = insert_accesses(accesses);
+        if (pre_opt === false) {
+            menu_need_auth();
+            return;
+        } else if (pre_opt === true) {
+            return;
+        } else {
+            body.appendChild(pre_opt);
+            pre = dom('pre');
+        }
+    }
+    menu_has_auth(!['wan_anon', 'local_anon', ''].includes(user));
+    var [entries, fpre_cnt, fext_cnt] = parse_entries(pre[0].innerHTML, now, date_format);
+    var fcount = entries.length;
+    var t = table(['Filename', 'Size', 'Date'], entries);
+
+    // remove everything except menu and auth_form
+    Array.from(body.children).forEach((c) => {
+        if (!['menu', 'auth_form', 'status'].includes(c.id)) {
+            body.removeChild(c);
+        }
+    })
+    body.appendChild(t);
+
     var uitype_func = {
         'photo_gallery': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // TODO gallery mode for images (https://darekkay.com/blog/photography-website/ or https://www.files.gallery/)
         'tvshow_episode': () => sort_table(dom('#fthead'), dom('#ftbody'), 1, true), // sort by size
         'media_season': () => sort_table(dom('#fthead'), dom('#ftbody'), 0, false), // sort by name
         'default': () => sort_table(dom('#fthead'), dom('#ftbody'), 2, true), // default sort by date
     };
+    var [uitype, has_media] = files_stats_auto_sort(fpre_cnt, fext_cnt, fcount);
     uitype_func[uitype]();
 
+    if (fcount > 0) {
+        menu_has_files();
+    }
+    if (has_media) {
+        menu_has_media();
+    }
     var wgetcode = el('div', { id: 'wget_code' }, [
         el('code', { innerText: "wget -r -c -nH --no-parent --reject 'index.html*' '{0}'".format(document.location) }) // TODO wget add cookie if logged in
     ], { 'class': 'form hide' });
     body.insertBefore(wgetcode, body.firstChild);
-    if (fcount > 0) {
-        menu_has_files();
-    }
-    if ((vids + imgs + audios) > 0) {
-        menu_has_media();
-    }
 }
 
 
