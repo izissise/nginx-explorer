@@ -632,7 +632,6 @@ function upload_start(ev) {
             }
             console.log('Chunked upload -> Filesize: {0} ChunkCnt: {1} ChunkSz: {2} ChunkLastSz: {3}'.format(f.size, chunk_cnt, chunk_size, chunk_last_size));
         }
-        session_id = Math.round(Math.pow(10, 17) * Math.random()); // generate random long number for SessionID
 
         // first upload meta file
         // TODO calculate and send block and file hashes
@@ -650,14 +649,13 @@ function upload_start(ev) {
             'name': f.name,
             'size': f.size,
             'type': f.type,
-            'session_id': session_id,
             'chunk_cnt': chunk_cnt,
             'chunk_size': chunk_size,
             'chunk_last_size': chunk_last_size,
         }) + '\n';
         meta += '# Fixup command\n# ' + fixupcmd + '\n';
         upload_func(
-            upload_endpoint, session_id, meta, up_progress, up_progress_el
+            upload_endpoint, meta, up_progress, up_progress_el
         ).then(([_xhr, up_progress_el]) => {
             // meta upload success, start real upload
             var seeker = 0;
@@ -677,7 +675,7 @@ function upload_start(ev) {
                 promise_chain = promise_chain.then(([_xhr, up_progress_el]) => {
                     up_progress_el.children[1].innerText = chunk_txt;
                     return upload_func(
-                        upload_endpoint, session_id, chunk, up_progress, up_progress_el
+                        upload_endpoint, chunk, up_progress, up_progress_el
                     );
                 });
             }
@@ -688,7 +686,7 @@ function upload_start(ev) {
     form.reset();
 }
 
-function upload_raw(url, sessionID, file, progress, cb_data) {
+function upload_raw(url, file, progress, cb_data) {
     return new Promise((resolve, reject) => {
         aborting = false;
         xhr = new XMLHttpRequest();
@@ -697,7 +695,6 @@ function upload_raw(url, sessionID, file, progress, cb_data) {
             'Content-Type': 'application/octet-stream',
             'Content-Disposition': 'attachment; filename="{0}"'.format(encodeURIComponent(file.name)),
             'X-Content-Range': 'bytes 0-{0}/{1}'.format(file.size - 1, file.size),
-            'X-Session-ID': sessionID,
         };
         xhr = Object.entries(headers).reduce((xhr, [k, v]) => { xhr.setRequestHeader(k, v); return xhr; }, xhr);
         xhr.upload.addEventListener('progress', (e) => {
