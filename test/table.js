@@ -21,6 +21,8 @@ QUnit.module('table', function() {
     QUnit.test('insert_accesses', function(assert) {
             var a = insert_accesses(["/___ngxp/upload"]);
             assert.equal(false, a);
+            var a = insert_accesses([""]);
+            assert.equal(false, a);
             var a = insert_accesses(["/___ngxp/asd", "/___ngxp/upload"]);
             assert.equal(false, a);
             var a = insert_accesses([]);

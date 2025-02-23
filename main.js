@@ -225,7 +225,7 @@ function parse_entries(inp, now, date_format) {
 }
 
 function insert_accesses(accesses) {
-    var accesses = accesses.filter((a) => !a.startsWith('/___ngxp/'));
+    var accesses = accesses.filter((a) => !a.startsWith('/___ngxp/') && a != "");
     if (accesses.length == 0) {
         return false;
     }
