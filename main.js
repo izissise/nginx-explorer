@@ -224,12 +224,12 @@ function parse_entries(inp, now, date_format) {
     return [e, fpre_cnt, fext_cnt];
 }
 
-function insert_accesses(accesses) {
+function insert_accesses(accesses, loc) {
     var accesses = accesses.filter((a) => !a.startsWith('/___ngxp/') && a != "");
     if (accesses.length == 0) {
         return false;
     }
-    if (accesses.some((a) => document.location.pathname.startsWith(a))) {
+    if (accesses.some((a) => loc.startsWith(a))) {
         return true; // just an empty directory we have access
     }
     return el('pre', {},
@@ -269,7 +269,7 @@ function setup_files() {
     var body = dom('body')[0];
     var pre = dom('pre');
     if (pre.length == 0) { // nothing, probably unauthorized, insert or tell menu
-        var pre_opt = insert_accesses(accesses);
+        var pre_opt = insert_accesses(accesses, document.location.pathname);
         if (pre_opt === false) {
             menu_need_auth();
             return;

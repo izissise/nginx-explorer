@@ -19,15 +19,21 @@ QUnit.module('table', function() {
     });
 
     QUnit.test('insert_accesses', function(assert) {
-            var a = insert_accesses(["/___ngxp/upload"]);
+            var a = insert_accesses(["/"], "/");
+            assert.equal(a, true);
+            var a = insert_accesses(["/aaaa"], "/aaaa");
+            assert.equal(a, true);
+            var a = insert_accesses(["/aaa", "/kl"], "/aaa");
+            assert.equal(a, true);
+            var a = insert_accesses(["/___ngxp/upload"], "/");
             assert.equal(false, a);
-            var a = insert_accesses([""]);
+            var a = insert_accesses([""], "/");
             assert.equal(false, a);
-            var a = insert_accesses(["/___ngxp/asd", "/___ngxp/upload"]);
+            var a = insert_accesses(["/___ngxp/asd", "/___ngxp/upload"], "/");
             assert.equal(false, a);
-            var a = insert_accesses([]);
+            var a = insert_accesses([], "/");
             assert.equal(false, a);
-            var a = insert_accesses(["/a", "/b/c"]);
+            var a = insert_accesses(["/a", "/b/c"], "/");
             assert.equal('/a\n/b/c\n', a.innerText);
     });
 });
