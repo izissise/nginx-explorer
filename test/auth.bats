@@ -231,7 +231,7 @@ setup() {
     rm -f "${TEST_DIR}"/test_runtime/test_upload1
 }
 @test "upload with upload user ok" {
-    local cookie;
+    local cookie sum;
     cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n upload:uploadtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
 
     head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/test_upload2
@@ -239,6 +239,15 @@ setup() {
     sum=$(md5sum "${TEST_DIR}"/test_runtime/test_upload2 | awk '{ print $1 }')
     md5sum "${TEST_DIR}"/test_runtime/uploads/* | awk '{ print $1 }' | grep "$sum"
     rm -f "${TEST_DIR}"/test_runtime/test_upload2
+}
+@test "upload returns file number" {
+    local cookie fileno;
+    cookie=$(curl -sf -o /dev/null -X POST --cookie-jar - -H "authorization: Basic $(echo -n upload:uploadtestpass | base64)" http://127.0.0.1:8085/___ngxp/login | grep ngxp | sed 's/.*\sngxp\s*/ngxp=/')
+
+    head -c 1048576 < /dev/urandom > "${TEST_DIR}"/test_runtime/test_upload3
+    fileno=$(curl -f -s -o - --cookie "${cookie}" -H 'Content-Type: application/octet-stream' -H 'Content-Disposition: attachment; filename="b"' --data-binary @"${TEST_DIR}"/test_runtime/test_upload3 -X POST http://127.0.0.1:8085/___ngxp/upload/)
+    cmp "${TEST_DIR}"/test_runtime/test_upload3 "${TEST_DIR}"/test_runtime/uploads/"$fileno"
+    rm -f "${TEST_DIR}"/test_runtime/test_upload3
 }
 @test "download at multiple path tree" {
     local cookie;
