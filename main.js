@@ -12,7 +12,7 @@ function dom(select) {
 
 // if file is a service worker
 if (this.document && g_this_script !== 'inside_test') {
-    var g_this_script = g_this_script || Array.from(dom('script')).filter((s) => s.hasAttribute('name'))[0];
+    var g_this_script = g_this_script || document.currentScript;
     var g_icon_base = null;
 
     onWindowLoad(setup_menu);
@@ -566,45 +566,70 @@ function uploade_etc_and_speed(now, transfer_size, transferred_size, last_transf
     return [estimate_to_completion, speed];
 }
 
+function up_progress([e, [upprogress, _]]) {
+    var ftotal = e.total == 0 ? 1 : e.total;
+    var floaded = e.loaded == 0 ? 1 : e.loaded;
+    var perc = Math.floor((floaded / ftotal) * 100);
+    var bar = upprogress.children[0];
+    var last_transferred_date = bar.dataset.lasttransferreddate;
+    if (last_transferred_date === undefined) {
+        last_transferred_date = e.timeStamp;
+    }
+    var last_transferred_size = bar.dataset.lasttransferredsize;
+    if (last_transferred_size === undefined) {
+        last_transferred_size = 0;
+    }
+    var duration = e.timeStamp - last_transferred_date;
+    var [etc, speed] = uploade_etc_and_speed(e.timeStamp, ftotal, floaded, last_transferred_date, last_transferred_size);
+    console.log("{0}%, transferred {1}MiB/{2}MiB, {3}MiB/S in the last {4}s should finish in {5} seconds".format(perc, (floaded / (1024 * 1024)).toFixed(1), (ftotal / (1024 * 1024)).toFixed(1), (speed / (1024 * 1024)).toFixed(2), (duration / 1000).toFixed(0), (etc).toFixed(0)));
+    bar.value = perc;
+    bar.dataset.lasttransferreddate = e.timeStamp;
+    bar.dataset.lasttransferredsize = floaded;
+};
+function up_success([xhr, [upprogress, _]]) {
+    console.log('Success - server responded with:', xhr.responseText);
+    upprogress.children[1].innerText = '\u2713';
+};
+function up_error([xhr, [upprogress, _]]) {
+    console.error('A server error occurred:', xhr.responseText); // Could retry at this stage depending on xhr.status
+    upprogress.children[1].innerText = '\u274C';
+};
+
+function up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno) {
+    // /!\ /!\ /!\ A copy of conversion script should be
+    // kept on server to avoid RCE from users
+    var fixupcmd = 'find ./ -type f'; // find all files in current folder
+    fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
+    fixupcmd += ' && read -r -n 16 head < "$i" && if [ "$head" != "#ngxpupload_meta" ]; then continue; fi';
+    fixupcmd += ' && name=$(grep -v "#" "$i" | jq -r ".name" | tr "/" "_")'; // get name
+    fixupcmd += ' && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c'; // find all files that are $chunk_sz in size
+    fixupcmd += ' | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done'; // only keep the one with a higher id
+    fixupcmd += ' | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")"'; // sort them and keep $chunk_cnt
+    fixupcmd += ' | while read -r f; do cat "$f" >> "$name" && rm -f "$f"; done && rm -f "$i"; done'; // concatenate
+    var meta = "#ngxpupload_meta\n" + JSON.stringify({
+        'name': f.name,
+        'size': f.size,
+        'type': f.type,
+        'chunk_cnt': chunk_cnt,
+        'chunk_size': chunk_size,
+        'chunk_last_size': chunk_last_size,
+        'chunk_fileno': chunk_fileno,
+    }) + '\n';
+    meta += '# Fixup command\n# ' + fixupcmd + '\n';
+    return meta;
+}
+
 function upload_start(ev) {
     if (upload_func === null) {
         console.error("Handle upload func is null");
         return;
     }
 
-    var up_progress = ([e, upprogress]) => {
-        var ftotal = e.total == 0 ? 1 : e.total;
-        var floaded = e.loaded == 0 ? 1 : e.loaded;
-        var perc = Math.floor((floaded / ftotal) * 100);
-        var bar = upprogress.children[0];
-        var last_transferred_date = bar.dataset.lasttransferreddate;
-        if (last_transferred_date === undefined) {
-            last_transferred_date = e.timeStamp;
-        }
-        var last_transferred_size = bar.dataset.lasttransferredsize;
-        if (last_transferred_size === undefined) {
-            last_transferred_size = 0;
-        }
-        var duration = e.timeStamp - last_transferred_date;
-        var [etc, speed] = uploade_etc_and_speed(e.timeStamp, ftotal, floaded, last_transferred_date, last_transferred_size);
-        console.log("{0}%, transferred {1}MiB/{2}MiB, {3}MiB/S in the last {4}s should finish in {5} seconds".format(perc, (floaded / (1024 * 1024)).toFixed(1), (ftotal / (1024 * 1024)).toFixed(1), (speed / (1024 * 1024)).toFixed(2), (duration / 1000).toFixed(0), (etc).toFixed(0)));
-        bar.value = perc;
-        bar.dataset.lasttransferreddate = e.timeStamp;
-        bar.dataset.lasttransferredsize = floaded;
-    };
-    var up_success = ([xhr, upprogress]) => {
-        console.log('Success - server responded with:', xhr.responseText);
-        upprogress.children[1].innerText = '\u2713';
-    };
-    var up_error = ([xhr, upprogress]) => {
-        console.error('A server error occurred:', xhr.responseText); // Could retry at this stage depending on xhr.status
-        upprogress.children[1].innerText = '\u274C';
-    };
-
     var form = ev.target.parentNode;
     var table = form.parentNode.children[1];
     table.classList.remove("hide");
     var file = form.children[0];
+
     Array.from(file.files).forEach((f) => {
         var up_progress_el = el('span', {}, [
             el('progress', { max: 100, value: 0 }),
@@ -633,54 +658,41 @@ function upload_start(ev) {
             console.log('Chunked upload -> Filesize: {0} ChunkCnt: {1} ChunkSz: {2} ChunkLastSz: {3}'.format(f.size, chunk_cnt, chunk_size, chunk_last_size));
         }
 
-        // first upload meta file
-        // TODO calculate and send block and file hashes
-        // /!\ /!\ /!\ copy of conversion script should be
-        // kept on server to avoid RCE from users
-        var fixupcmd = 'find ./ -type f'; // find all files in current folder
-        fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
-        fixupcmd += ' && read -r -n 16 head < "$i" && if [ "$head" != "#ngxpupload_meta" ]; then continue; fi';
-        fixupcmd += ' && name=$(grep -v "#" "$i" | jq -r ".name" | tr "/" "_")'; // get name
-        fixupcmd += ' && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c'; // find all files that are $chunk_sz in size
-        fixupcmd += ' | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done'; // only keep the one with a higher id
-        fixupcmd += ' | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")"'; // sort them and keep $chunk_cnt
-        fixupcmd += ' | while read -r f; do cat "$f" >> "$name" && rm -f "$f"; done && rm -f "$i"; done'; // concatenate
-        var meta = "#ngxpupload_meta\n" + JSON.stringify({
-            'name': f.name,
-            'size': f.size,
-            'type': f.type,
-            'chunk_cnt': chunk_cnt,
-            'chunk_size': chunk_size,
-            'chunk_last_size': chunk_last_size,
-        }) + '\n';
-        meta += '# Fixup command\n# ' + fixupcmd + '\n';
-        upload_func(
-            upload_endpoint, meta, up_progress, up_progress_el
-        ).then(([_xhr, up_progress_el]) => {
-            // meta upload success, start real upload
-            var seeker = 0;
-            up_progress_el.children[1].innerText = '◌';
-            var promise_chain = Promise.resolve(([null, up_progress_el]));
-            for (var i = 0; i < chunk_cnt; i++) {
-                let chunk_txt = '◌';
-                if (chunk_cnt > 1) {
-                    chunk_txt = '{0}/{1}'.format(i + 1, chunk_cnt);
-                }
-                var chsz = chunk_size;
-                if ((seeker + chsz) > f.size) {
-                    chsz = chunk_last_size;
-                }
-                let chunk = f.slice(seeker, seeker + chsz);
-                seeker += chsz;
-                promise_chain = promise_chain.then(([_xhr, up_progress_el]) => {
-                    up_progress_el.children[1].innerText = chunk_txt;
-                    return upload_func(
-                        upload_endpoint, chunk, up_progress, up_progress_el
-                    );
-                });
+        //start real upload
+        var seeker = 0;
+        up_progress_el.children[1].innerText = '◌';
+        var promise_chain = Promise.resolve(([null, [up_progress_el, []]]));
+        for (var i = 0; i < chunk_cnt; i++) {
+            let chunk_txt = '◌';
+            if (chunk_cnt > 1) {
+                chunk_txt = '{0}/{1}'.format(i + 1, chunk_cnt);
             }
-            promise_chain.then(up_success);
-        }, up_error);
+            var chsz = chunk_size;
+            if ((seeker + chsz) > f.size) {
+                chsz = chunk_last_size;
+            }
+            let chunk = f.slice(seeker, seeker + chsz);
+            seeker += chsz;
+            promise_chain = promise_chain.then(([xhr, [up_progress_el, chunk_fileno]]) => {
+                if (xhr !== null) {
+                    chunk_fileno.push(xhr.responseText);
+                }
+                up_progress_el.children[1].innerText = chunk_txt;
+                return upload_func(
+                    upload_endpoint, chunk, up_progress, [up_progress_el, chunk_fileno]
+                );
+            });
+        }
+        // finally upload meta file
+        promise_chain.then(([xhr, [up_progress_el, chunk_fileno]]) => {
+            if (xhr !== null) {
+                chunk_fileno.push(xhr.responseText);
+            }
+            up_progress_el.children[1].innerText = chunk_txt;
+            return upload_func(
+                upload_endpoint, up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno), up_progress, [up_progress_el, chunk_fileno]
+            );
+        }).then(up_success, up_error);
 
     });
     form.reset();
@@ -689,7 +701,7 @@ function upload_start(ev) {
 function upload_raw(url, file, progress, cb_data) {
     return new Promise((resolve, reject) => {
         aborting = false;
-        xhr = new XMLHttpRequest();
+        xhr = new XMLHttpRequest(); // use xhr, fetch doesn't have a progress event
         xhr.open('POST', url, true);
         var headers = {
             'Content-Type': 'application/octet-stream',

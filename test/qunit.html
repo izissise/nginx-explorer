@@ -12,18 +12,44 @@
 
         var tests = [
             'table.js',
+            'upload.js',
         ];
 
+        async function ngxp_html_header() {
+            try {
+                const response = await fetch('/', {
+                    method: 'GET',
+                    headers: {
+                        'Range': 'bytes=0-255'
+                    }
+                });
+                return await response.text();
+            } catch (error) {
+                console.error("Error fetching bytes:", error);
+                return null;
+            }
+        }
+
         function dynamic_script_load(urls, index = 0) {
+            window.dyn_scripts = window.dyn_scripts || {};
             return new Promise((resolve, reject) => {
                 if (index >= urls.length) {
                     return reject("all script URLs failed to load.");
                 }
                 var script = document.createElement('script');
                 script.src = urls[index];
+                script.async = true;
                 script.addEventListener("load", function() {
-                    console.log(`Script loaded successfully from ${urls[index]}`);
-                    resolve(urls[index]);
+                    var maybe_promise = window.dyn_scripts[script.src];
+                    if (maybe_promise instanceof Promise) {
+                        return maybe_promise.then(() => {
+                            console.log(`Script ran successfully from ${urls[index]}`);
+                            resolve(urls[index]);
+                        });
+                    } else {
+                        console.log(`Script loaded successfully from ${urls[index]}`);
+                        resolve(urls[index]);
+                    }
                 });
                 script.addEventListener("error", function() {
                     console.error(`Failed to load script from ${urls[index]}. Trying next URL...`);
@@ -36,7 +62,10 @@
         var base = path.substring(0, path.lastIndexOf('/') + 1);
         Promise.all(
             tests.map((s) => dynamic_script_load([base + s]))
-        ).then(() => QUnit.start());
+        ).then(() => {
+            console.log('All test file loaded, starting qunit');
+            QUnit.start();
+        });
   </script>
 </body>
 </html>

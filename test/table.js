@@ -1,7 +1,5 @@
 var g_this_script = 'inside_test';
-dynamic_script_load([base + 'main.js']).then(() => {
-
-QUnit.module('table', function() {
+window.dyn_scripts[document.currentScript.src] = dynamic_script_load([base + 'main.js']).then(() => QUnit.module('table', function() {
     QUnit.test('create', function(assert) {
             var t = table(["A", "B"], [
                 el('tr', {}, [el('td', { innerText: "1" }), el('td', { innerText: "2" })]),
@@ -36,6 +34,4 @@ QUnit.module('table', function() {
             var a = insert_accesses(["/a", "/b/c"], "/");
             assert.equal('/a\n/b/c\n', a.innerText);
     });
-});
-
-});
+}));
