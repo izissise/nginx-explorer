@@ -19,37 +19,42 @@ window.dyn_scripts[document.currentScript.src] = dynamic_script_load([base + 'ma
             return r.text();
         }).then((d) => assert.equal("testdata1", d));
     });
-    QUnit.test('nxgp_file', function(assert) {
+    QUnit.test('nxgp_files', function(assert) {
         var meta_magick = '#ngxpupload_meta';
-        var data = "afjkewll wjefoiwnocewipe pwefpdwqfwqjf  p wqpfkwfep wfewqfwfe";
-
-        var file = new File([data], "test2", { type: 'text' });
         var ui = el('span', {}, [
             el('progress', { max: 100, value: 0 }),
             el('span', { innerText: '◌' }),
         ]);
-        return upload_ngxp_file(file, ui, upload_raw, upload_uri, 5).then((id) => {
-            console.log(id);
-            return fetch('/uploads/' + id);
-        }).then((r) => {
-            assert.ok(r.ok);
-            return r.text();
-        }).then((d) => {
-            assert.equal('#ngxpupload_meta', d.substring(0, meta_magick.length));
-            var j = d.split('\n').filter((l) => !l.startsWith('#') && l != meta_magick).join('');
-            var fileinfo = JSON.parse(j);
-            assert.equal(data.length, fileinfo.size);
-            assert.equal('text', fileinfo.type);
-            assert.equal('test2', fileinfo.name);
-            assert.ok(fileinfo.chunk_fileno.length > 0);
-            return Promise.all(
-                fileinfo.chunk_fileno.map((fn) => fetch('/uploads/' + fn).then((p) => {
-                    assert.ok(p.ok);
-                    return p.text();
-                }))
-            ).then((ds) => ds.join(''));
-        }).then((d) => {
-            assert.equal(data, d);
+        var tst_up = (file, chsz) => upload_ngxp_file(file, ui, upload_raw, upload_uri, chsz)
+            .then((id) => fetch('/uploads/' + id))
+            .then((r) => {
+                assert.ok(r.ok);
+                return r.text();
+            }).then((d) => {
+                assert.equal('#ngxpupload_meta', d.substring(0, meta_magick.length));
+                var j = d.split('\n').filter((l) => !l.startsWith('#')).join('');
+                var fileinfo = JSON.parse(j);
+                assert.equal(file.size, fileinfo.size);
+                assert.equal(file.type, fileinfo.type);
+                assert.equal(file.name, fileinfo.name);
+                assert.ok(fileinfo.chunk_fileno.length > 0);
+                return Promise.all([file.text(), Promise.all(
+                    fileinfo.chunk_fileno.map((fn) => fetch('/uploads/' + fn).then((p) => {
+                        assert.ok(p.ok);
+                        return p.text();
+                    }))
+                ).then((ds) => ds.join(''))]);
+            }).then(([e, a]) => {
+                assert.equal(a, e);
         });
+
+        return Promise.all([
+            tst_up(new File(["afjkewll wjefoiwnocewipe pwefpdwqfwqjf  p wqpfkwfep wfewqfwfeewlkfwlekflwkemfwle"], "test1", { type: 'text' }), 3),
+            tst_up(new File(["afjkewll wjefoiwnocewipe pwefpdwqfwqjf  p wqpfkwfep wfewqfwfe"], "test2", { type: 'text' }), 5),
+            tst_up(new File(["afjkewll wjefoiwnocewipe pwefpdwqfwqjf  p wqpfkwfep wfewqfwfe"], "test3", { type: 'text' }), 100),
+            tst_up(new File([""], "test4", { type: 'text' }), 100),
+            tst_up(new File(["r"], "test5", { type: 'text' }), 100),
+            tst_up(new File(["rkljlkjljlj"], "test5", { type: 'text' }), 1),
+        ]);
     });
 }));

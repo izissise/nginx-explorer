@@ -655,13 +655,9 @@ function upload_ngxp_file(f, ui_span, upload_func, upload_endpoint, upload_max_s
     var chunk_last_size = 0;
     if (upload_max_size > 0 && f.size > upload_max_size) {
         // upload in chunks
-        chunk_cnt = Math.ceil(f.size / upload_max_size);
-        chunk_size = Math.floor(f.size / chunk_cnt);
-        chunk_last_size = f.size - (chunk_cnt * chunk_size);
-        while (chunk_last_size >= chunk_size) {
-            chunk_last_size -= chunk_size;
-            chunk_cnt += 1;
-        }
+        chunk_cnt = f.size / upload_max_size | 0;
+        chunk_size = upload_max_size;
+        chunk_last_size = f.size % upload_max_size | 0;
         if (chunk_last_size > 0) {
             chunk_cnt += 1;
         }
