@@ -600,14 +600,18 @@ function up_error([xhr, [ui_span, _]]) {
 function up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno) {
     // /!\ /!\ /!\ A copy of conversion script should be
     // kept on server to avoid RCE from users
-    var fixupcmd = 'find ./ -type f'; // find all files in current folder
-    fixupcmd += ' | while read -r i; do if [ ! -f "$i" ]; then continue; fi'; // put in $i file that still exists
-    fixupcmd += ' && read -r -n 16 head < "$i" && if [ "$head" != "#ngxpupload_meta" ]; then continue; fi';
-    fixupcmd += ' && name=$(grep -v "#" "$i" | jq -r ".name" | tr "/" "_")'; // get name
-    fixupcmd += ' && find ./ -type f -size "$(grep -v "#" "$i" | jq -r ".chunk_size | @sh")"c -or -size "$(grep -v "#" "$i" | jq -r ".chunk_last_size | @sh")"c'; // find all files that are $chunk_sz in size
-    fixupcmd += ' | while read -r j; do if (( 10#${i##*/} < 10#${j##*/} )); then echo "$j"; fi; done'; // only keep the one with a higher id
-    fixupcmd += ' | sort -n | head -n "$(grep -v "#" "$i" | jq -r ".chunk_cnt | @sh")"'; // sort them and keep $chunk_cnt
-    fixupcmd += ' | while read -r f; do cat "$f" >> "$name" && rm -f "$f"; done && rm -f "$i"; done'; // concatenate
+    var fixupcmd = 'find ./ -type f | while read -r h; do'  // find all files in current folder
+    fixupcmd += ' if [ ! -f "$h" ]; then continue; fi' // put in $h file that still exists
+    fixupcmd += ' && read -r -n 16 head < "$h" && if [ "$head" != "#ngxpupload_meta" ]; then continue; fi';
+    fixupcmd += ' && IFS=\'/\' read -r name chk_cnt chk_sz chk_lsz < <(jq -Rr \'fromjson? | [(.name | sub("/";"_";"g")), (.chunk_cnt|tonumber), (.chunk_size|tonumber), (.chunk_last_size|tonumber)] | join("/")\' "$h")';
+    fixupcmd += ' && eval "chk_fileno=( $( jq -Rr --arg d "$1" \'fromjson? | .chunk_fileno[] | select(test("^[0-9]*$")) | "\\($d)\\(.)" | @sh\' "$h" ) )"';
+    fixupcmd += ' && stats=$(stat -c "%n %s" "$h" "${chk_fileno[@]}" | sort | uniq -f1 -c)';
+    fixupcmd += ' && stats=${stats% [0-9]*}  && stats=${stats// } && stats=${stats//$\'\\n\'}';
+    fixupcmd += ' && expected="$(( chk_cnt - ( chk_lsz > 0 ) ))${chk_fileno[0]}${chk_sz}"';
+    fixupcmd += ' && if (( chk_lsz > 0 )); then; expected+="1${chk_fileno[-1]}${chk_lsz}"; fi';
+    fixupcmd += ' && { [ "$stats" = "${expected}1${h}" ] || { echo "$h meta invalid" >&2; break; }; }';
+    fixupcmd += ' && cat "${chk_fileno[@]}" > "$name" && rm -f "$h" "${chk_fileno[@]}"; done';
+
     var meta = "#ngxpupload_meta\n" + JSON.stringify({
         'name': f.name,
         'size': f.size,

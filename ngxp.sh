@@ -97,25 +97,26 @@ upload_fixup() {
         printf '%s\n' "$0 ${FUNCNAME[0]} upload_path"
         exit 1
     fi
-    upload_dir=$1
-    find "$upload_dir" -type f | while read -r h; do
-        if [ ! -f "$h" ]; then continue; fi                              # file still exist
-        read -r -n 16 head < "$h"                                        # read first 16 bytes
-        if [ "$head" != "#ngxpupload_meta" ]; then continue; fi          # if marker value
-        name=$(grep -v "#" "$h" | jq -r ".name" | tr "/" "_")            # extract filename
-        chk_sz=$(grep -v "#" "$h" | jq -r ".chunk_size | @sh")           # extract chunk size
-        chk_last_sz=$(grep -v "#" "$h" | jq -r ".chunk_last_size | @sh") # extract last chunk size
-        chk_cnt=$(grep -v "#" "$h" | jq -r ".chunk_cnt | @sh")           # extract chunk count
-        find "$upload_dir" -type f -size "$chk_sz"c -or -size "$chk_last_sz"c \
-            | while read -r c; do
-                if (( 10#${h##*/} < 10#${c##*/} )); then echo "$c"; fi;  # keep higher ids
-            done \
-            | sort -n | head -n "$chk_cnt" \
-            | while read -r f; do
-                cat "$f" >> "$name" # concatenate file
-                rm -f "$f";         # remove chunk
-            done
-        rm -f "$h"; # remove header file
+    find "$1" -type f | while read -r h; do
+        if [ ! -f "$h" ]; then continue; fi                                                # file still exist
+        read -r -n 16 head < "$h" || true                                                  # read first 16 bytes
+        if [ "$head" != "#ngxpupload_meta" ]; then continue; fi                            # if marker value
+        IFS='/' read -r name chk_cnt chk_sz chk_lsz < <(
+            jq -Rr 'fromjson? | [(.name | sub("/";"_";"g")), (.chunk_cnt|tonumber), (.chunk_size|tonumber), (.chunk_last_size|tonumber)] | join("/")' "$h"
+        ) # extract json
+        eval "chk_fileno=( $( jq -Rr --arg d "$1" 'fromjson? | .chunk_fileno[] | select(test("^[0-9]*$")) | "\($d)\(.)" | @sh' "$h" ) )"
+        # shellcheck disable=SC2154 # from eval
+        stats=$(stat -c '%n %s' "$h" "${chk_fileno[@]}" | sort | uniq -f1 -c)
+        stats=${stats% [0-9]*}
+        stats=${stats// }
+        stats=${stats//$'\n'}
+        expected="$(( chk_cnt - ( chk_lsz > 0 ) ))${chk_fileno[0]}${chk_sz}"
+        if (( chk_lsz > 0 )); then
+            expected+="1${chk_fileno[-1]}${chk_lsz}"
+        fi
+        [ "$stats" = "${expected}1${h}" ] || { echo "$h meta invalid" >&2; break; }
+        cat "${chk_fileno[@]}" > "$name"
+        rm -f "$h" "${chk_fileno[@]}"
     done
 }
 
