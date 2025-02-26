@@ -160,6 +160,9 @@ a, a:visited {
 :root {
   accent-color: #c71585;
 }
+#username {
+    font-size: 6px;
+}
 .form, form {
     width: fit-content;
 }

@@ -238,6 +238,7 @@ function setup_files() {
     var accesses = Array.from(g_this_script.attributes['accesses'].value.split('|'));
     g_icon_base = g_this_script.attributes['icons'].value;
 
+    console.log("user: {0}".format(user));
     var body = dom('body')[0];
     var pre = dom('pre');
     if (pre.length == 0) { // nothing, probably unauthorized, insert or tell menu
@@ -357,17 +358,19 @@ function setup_page() {
 
 function setup_menu() {
     var status = g_this_script.attributes['status'].value;
+    var user = g_this_script.attributes['user'].value;
     var body = dom('body')[0];
-    var logform = el('div', { id: 'menu' }, [
+    var m = el('div', { id: 'menu' }, [
         el('input', { type: 'button', value: "💾", title: 'bulk download/upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "wget_code");' }),
         el('input', { type: 'button', value: "🔐", title: 'login' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "auth_form");' }),
         el('input', { type: 'button', value: "📤", title: 'upload' }, [], { 'class': 'hide', 'onclick': 'menu_toggle(event, "upload_form");' }),
         el('input', { type: 'button', value: "🛋️", title: 'media mode' }, [], { 'class': 'hide', 'onclick': 'media_actions(); event.target.disabled = "disabled"' }),
         el('input', { type: 'button', value: "🧪", title: 'unit test page' }, [], { 'class': 'hide' }),
+        el('span', { id: 'username', innerText: user }),
         el('span', { id: 'status', innerText: status }),
 
     ]);
-    body.appendChild(logform);
+    body.appendChild(m);
 }
 
 function menu_has_files() {
