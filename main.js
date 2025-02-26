@@ -106,35 +106,31 @@ function format_size(size) {
 
 function format_date(date, now, with_seconds) {
     var d = new Date(date);
-    var dtime = d.getTime();
+    if (!d.getTime()) {
+        d = new Date(Number.MAX_SAFE_INTEGER / 10);
+    }
     var iso = d.toISOString();
     var formatted_24h = [d.getHours().padLeft(),
         d.getMinutes().padLeft()].concat(with_seconds ? [d.getSeconds().padLeft()] : []).join(':');
     return el('td', {
         title: iso,
         innerText: (() => {
-            if ((now - dtime) > (1000 * 60 * 60 * 24 * 2)) { // more than 2days in the past
+            var diff = Math.round(((now - d.getTime()) / 1000) + (d.getTimezoneOffset() * 60));
+            if (diff > (60 * 60 * 24 * 2)) { // more than 2days in the past
                 return formatted_24h +
                     ' ' +
                     [d.getDate().padLeft(),
                     (d.getMonth() + 1).padLeft(),
                     d.getFullYear()].join('/');
-            } else if ((now - dtime) > -(1000 * 60 * 60 * 12)) {
-                if ((now - dtime) < (1000 * 60)) { // Less than 60seconds
-                    var seconds = Math.round((now - dtime) / (1000));
-                    var secondsStr = (seconds == 1) ? "second" : "seconds";
-                    return [seconds.toString(), secondsStr, "ago"].join(" ");
-                } else if ((now - dtime) < (1000 * 60 * 60)) { // Less than 60minutes
-                    var minutes = Math.round((now - dtime) / (1000 * 60));
-                    var minutesStr = (minutes == 1) ? "minute" : "minutes";
-                    return [minutes.toString(), minutesStr, "ago"].join(" ");
-                } else if ((now - dtime) < (1000 * 60 * 60 * 24)) { // Less than 24hours
-                    var hours = Math.round((now - dtime) / (1000 * 60 * 60));
-                    var hoursStr = (hours == 1) ? "hour" : "hours";
-                    return [hours.toString(), hoursStr, "ago"].join(" ");
-                } else { // More than one day
+            } else if (diff > -(60 * 60 * 12)) {
+                var dim_s = [60, 60, 24];
+                var di = 0;
+                for (di = 0; diff >= dim_s[di] && di < 3; diff /= dim_s[di]) di++;
+                diff = Math.round(diff);
+                if (di > 2) { // More than one day
                     return "Yesterday" + ' ' + formatted_24h;
                 }
+                return diff + " " + ["second", "minute", "hour"][di] + (diff ? "s" : "") + " ago";
             } else { // We are too far in the future don't display
                 return '-';
             }
@@ -297,6 +293,7 @@ function setup_files() {
         'default': () => sort_table(dom('#fthead'), dom('#ftbody'), 2, true), // default sort by date
     };
     var [uitype, has_media] = files_stats_auto_sort(fpre_cnt, fext_cnt, fcount);
+    console.log("ui type: {0}".format(uitype));
     uitype_func[uitype]();
 
     if (fcount > 0) {
