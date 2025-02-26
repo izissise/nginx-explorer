@@ -139,44 +139,23 @@ function format_date(date, now, with_seconds) {
 }
 
 function sort_table(theads, tbodies, column, descending) {
-    var j = 0;
-    for (j = 0; j < theads.length; j++) {
-        Array.from(theads[j].children).map((el, idx) => {
-            if (idx == column) {
-                el.dataset.sortway = descending ? 'descending' : 'ascending';
-            } else {
-                delete el.dataset.sortway;
-            }
-        });
-    }
-    // https://github.com/tristen/tablesort/blob/master/src/tablesort.js
-    // I tried multiple solution to sort the elements in the DOM
-    // in 2023 I found this to be the fatest way
-    for (j = 0; j < tbodies.length; j++) {
-        var tbody = tbodies[j];
-        if (tbody.rows.length == 0) {
-            continue;
+    // ui
+    theads.forEach(thead => [...thead.children].forEach((el, i) => {
+        delete el.dataset.sortway;
+        if (i == column) {
+            el.dataset.sortway = (descending ? 'descending' : 'ascending');
         }
+    }));
+
+    tbodies.forEach(tbody => {
+        if (!tbody.rows.length) return;
         tbody.style.cursor = 'progress';
-        var sorted = Array.from(tbody.rows).map((tr, idx) => {
-            return {
-                tr: tr,
-                sortval: tr.cells[column].dataset.sort,
-                idx: idx,
-            };
-        }).sort((a, b) => {
-            var s = a.sortval.localeCompare(b.sortval, undefined, { 'numeric': true });
-            if (s === 0) {
-                return descending ? b.idx - a.idx : a.idx - b.idx;
-            }
-            return s;
-        }).map((e) => e.tr);
-        if (descending) {
-            sorted.reverse();
-        }
-        tbody.append(...sorted);
+        var sorted = [...tbody.rows].map((tr, idx) => [tr, tr.cells[column].dataset.sort, idx])
+        .sort((a, b) => a[1].localeCompare(b[1], undefined, { 'numeric': true }) || (descending ? b[2] - a[2] : a[2] - b[2]))
+        .map((e) => e[0]);
+        tbody.append(...(descending ? sorted.reverse() : sorted));
         tbody.style.cursor = 'default';
-    }
+    })
 }
 
 function table(headers, entries) {
