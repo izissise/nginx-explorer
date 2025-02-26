@@ -96,7 +96,6 @@ th:nth-child(2), th:nth-child(3) {
   text-align: center;
 }
 td:nth-child(2), td:nth-child(3) {
-  background-color: rgba(246, 246, 246, 0.9);
   text-align: center;
 }
 tbody tr:nth-child(odd) {

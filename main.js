@@ -46,21 +46,6 @@ String.prototype.format = function() {
     });
 };
 
-function humanFileSize(bytes, si) {
-    var thresh = si ? 1000 : 1024;
-    if (Math.abs(bytes) < thresh) {
-        return bytes + ' B';
-    }
-    var units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-    var u = -1;
-    do {
-        bytes /= thresh;
-        ++u;
-    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-    return bytes.toFixed(1) + ' ' + units[u];
-}
-
 IconMap = {
     '7z': 'application-x-7z-compressed', 'aac': 'audio-x-generic', 'apk': 'android-package-archive', 'apng': 'image-png', 'atom': 'application-atom+xml', 'avi': 'audio-x-generic', 'bash': 'application-x-executable-script', 'bmp': 'image-bmp', 'c': 'text-x-csrc', 'cfg': 'text-x-generic', 'coffee': 'application-x-javascript', 'conf': 'text-x-generic', 'cpp': 'text-x-c++src', 'csh': 'application-x-executable-script', 'css': 'text-css', 'csv': 'text-csv', 'db': 'application-vnd.oasis.opendocument.database', 'deb': 'application-x-deb', 'desktop': 'application-x-desktop', 'doc': 'x-office-document', 'docx': 'x-office-document', 'eml': 'message-rfc822', 'epub': 'application-epub+zip', 'erb': 'application-x-ruby', 'ex': 'text-x-generic', 'exe': 'application-x-executable', 'fla': 'video-x-generic', 'flac': 'audio-x-flac', 'flv': 'video-x-generic', 'gif': 'image-gif', 'gml': 'text-xml', 'go': 'text-x-generic', 'gpx': 'text-xml', 'gz': 'application-x-gzip', 'h': 'text-x-chdr', 'hxx': 'text-x-c++hdr', 'hs': 'text-x-haskell', 'htm': 'text-html', 'html': 'text-html', 'ico': 'image-x-ico', 'ini': 'text-x-generic', 'iso': 'application-x-cd-image', 'jar': 'application-x-java-archive', 'java': 'application-x-java', 'jpeg': 'image-jpeg', 'jpg': 'image-jpeg', 'js': 'application-x-javascript', 'log': 'text-x-generic', 'lua': 'text-x-generic', 'm3u': 'audio-x-generic', 'markdown': 'text-x-generic', 'md': 'text-x-generic', 'mkv': 'video-x-matroska', 'mp3': 'audio-x-mpeg', 'mp4': 'video-mp4', 'odp': 'x-office-presentation', 'ods': 'x-office-spreadsheet', 'odt': 'x-office-document', 'ogg': 'audio-x-generic', 'otf': 'application-x-font-otf', 'pdf': 'application-pdf', 'pgp': 'application-pgp', 'php': 'application-x-php', 'pkg': 'package-x-generic', 'pl': 'application-x-perl', 'png': 'image-png', 'ppt': 'x-office-presentation', 'pptx': 'x-office-presentation', 'psd': 'image-x-psd', 'py': 'text-x-generic', 'pyc': 'application-x-python-bytecode', 'rar': 'application-x-rar', 'rb': 'application-x-ruby', 'rpm': 'application-x-rpm', 'rtf': 'text-rtf', 'sh': 'application-x-executable-script', 'svg': 'image-svg+xml-compressed', 'svgz': 'image-svg+xml-compressed', 'swf': 'application-x-shockwave-flash', 'tar': 'application-x-tar', 'text': 'text-x-generic', 'tiff': 'image-tiff', 'ttf': 'application-x-font-ttf', 'txt': 'text-x-generic', 'wav': 'audio-x-wav', 'webm': 'video-webm', 'wmv': 'video-x-wmv', 'xcf': 'image-x-xcf', 'xhtml': 'text-html', 'xls': 'x-office-spreadsheet', 'xlsx': 'x-office-spreadsheet', 'xml': 'text-xml', 'xpi': 'package-x-generic', 'xz': 'application-x-lzma-compressed-tar', 'zip': 'application-zip', 'zsh': 'application-x-executable-script', 'opml': 'text-xml', '.': 'folder',
 };
@@ -95,7 +80,7 @@ function file_ext(path) {
     return path.slice(path.lastIndexOf('.') + 1).toLowerCase();
 }
 
-var format_name = (name, link) => {
+function format_name(name, link) {
     var fileext = file_ext(link);
     var isdir = link.endsWith('/');
     var html = el('a', {
@@ -107,43 +92,55 @@ var format_name = (name, link) => {
         el('span', { innerText: name }),
     ], { 'data-link': link });
     return el('td', {}, [html], { 'data-sort': link });
-};
-var format_size = (size) => el('td', {
-    innerText: (size == 0) ? '-' : humanFileSize(size, false)
-}, [], { 'data-sort': size });
-var format_date = (date, now, with_seconds) => el('td', {
-    innerText: (() => {
-        var d = new Date(date);
-        var dtime = d.getTime();
-        var formatted_24h = [d.getHours().padLeft(),
-            d.getMinutes().padLeft()].concat(with_seconds ? [d.getSeconds().padLeft()] : []).join(':');
-        if ((now - dtime) > (1000 * 60 * 60 * 24 * 2)) { // more than 2days in the past
-            return formatted_24h +
-                ' ' +
-                [d.getDate().padLeft(),
-                (d.getMonth() + 1).padLeft(),
-                d.getFullYear()].join('/');
-        } else if ((now - dtime) > -(1000 * 60 * 60 * 12)) {
-            if ((now - dtime) < (1000 * 60)) { // Less than 60seconds
-                var seconds = Math.round((now - dtime) / (1000));
-                var secondsStr = (seconds == 1) ? "second" : "seconds";
-                return [seconds.toString(), secondsStr, "ago"].join(" ");
-            } else if ((now - dtime) < (1000 * 60 * 60)) { // Less than 60minutes
-                var minutes = Math.round((now - dtime) / (1000 * 60));
-                var minutesStr = (minutes == 1) ? "minute" : "minutes";
-                return [minutes.toString(), minutesStr, "ago"].join(" ");
-            } else if ((now - dtime) < (1000 * 60 * 60 * 24)) { // Less than 24hours
-                var hours = Math.round((now - dtime) / (1000 * 60 * 60));
-                var hoursStr = (hours == 1) ? "hour" : "hours";
-                return [hours.toString(), hoursStr, "ago"].join(" ");
-            } else { // More than one day
-                return "Yesterday" + ' ' + formatted_24h;
+}
+
+function format_size(size) {
+    var bytes = size;
+    for (var u = 0; Math.abs(bytes) >= 1024; bytes /= 1024) u++;
+    var hsz = bytes.toFixed(!!u) + " " + "BKMGTPEZY"[u] + (u ? "iB" : "");
+    return el('td', {
+        title: size,
+        innerText: (size == 0) ? '-' : hsz
+    }, [], { 'data-sort': size });
+}
+
+function format_date(date, now, with_seconds) {
+    var d = new Date(date);
+    var dtime = d.getTime();
+    var iso = d.toISOString();
+    var formatted_24h = [d.getHours().padLeft(),
+        d.getMinutes().padLeft()].concat(with_seconds ? [d.getSeconds().padLeft()] : []).join(':');
+    return el('td', {
+        title: iso,
+        innerText: (() => {
+            if ((now - dtime) > (1000 * 60 * 60 * 24 * 2)) { // more than 2days in the past
+                return formatted_24h +
+                    ' ' +
+                    [d.getDate().padLeft(),
+                    (d.getMonth() + 1).padLeft(),
+                    d.getFullYear()].join('/');
+            } else if ((now - dtime) > -(1000 * 60 * 60 * 12)) {
+                if ((now - dtime) < (1000 * 60)) { // Less than 60seconds
+                    var seconds = Math.round((now - dtime) / (1000));
+                    var secondsStr = (seconds == 1) ? "second" : "seconds";
+                    return [seconds.toString(), secondsStr, "ago"].join(" ");
+                } else if ((now - dtime) < (1000 * 60 * 60)) { // Less than 60minutes
+                    var minutes = Math.round((now - dtime) / (1000 * 60));
+                    var minutesStr = (minutes == 1) ? "minute" : "minutes";
+                    return [minutes.toString(), minutesStr, "ago"].join(" ");
+                } else if ((now - dtime) < (1000 * 60 * 60 * 24)) { // Less than 24hours
+                    var hours = Math.round((now - dtime) / (1000 * 60 * 60));
+                    var hoursStr = (hours == 1) ? "hour" : "hours";
+                    return [hours.toString(), hoursStr, "ago"].join(" ");
+                } else { // More than one day
+                    return "Yesterday" + ' ' + formatted_24h;
+                }
+            } else { // We are too far in the future don't display
+                return '-';
             }
-        } else { // We are too far in the future don't display
-            return '-';
-        }
-    })()
-}, [], { 'data-sort': date });
+        })()
+    }, [], { 'data-sort': date });
+}
 
 function sort_table(theads, tbodies, column, descending) {
     var j = 0;
