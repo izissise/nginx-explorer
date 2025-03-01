@@ -259,8 +259,8 @@ function setup_files() {
     var t = table(['Filename', 'Size', 'Date'], entries);
 
     // remove everything except menu and auth_form
-    Array.from(body.children).forEach((c) => {
-        if (!['menu', 'auth_form', 'status'].includes(c.id)) {
+    [...body.children].forEach((c) => {
+        if (!['menu', 'auth_form'].includes(c.id)) {
             body.removeChild(c);
         }
     })
