@@ -596,6 +596,7 @@ function up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno) {
         'chunk_size': chunk_size,
         'chunk_last_size': chunk_last_size,
         'chunk_fileno': chunk_fileno,
+        'uploader': g_this_script.attributes['user'].value,
     }) + '\n';
     meta += '# Fixup command\n# ' + fixupcmd + '\n';
     return meta;
