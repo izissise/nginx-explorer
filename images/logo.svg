@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 70">
+  <!-- Folder tab (lighter green) -->
+  <path d="M6,22 C6,15 11,10 17,10 L36,10 L42,4 C44,1 47,0 51,0 L64,0 C70,0 74,5 74,11 L74,22 Z" fill="#00b347"/>
+  <!-- Folder body -->
+  <path d="M6,22 L74,22 L74,60 C74,66 70,70 64,70 L16,70 C10,70 6,66 6,60 Z" fill="#009639"/>
+  <!-- N lettermark -->
+  <text x="40" y="57" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="30" fill="white" text-anchor="middle">N</text>
+  <!-- "nginx" wordmark -->
+  <text x="88" y="36" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="700" font-size="22" fill="#009639">nginx</text>
+  <!-- "explorer" wordmark -->
+  <text x="88" y="62" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="300" font-size="22" fill="#333333">explorer</text>
+</svg>

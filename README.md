@@ -1,11 +1,23 @@
-# nginx-explorer
+<p align="center">
+  <img src="images/logo.svg" alt="nginx-explorer" width="260"/>
+</p>
 
-> A minimal, zero-dependency file manager powered entirely by Nginx.
+<p align="center">
+  A minimal, zero-dependency file manager powered entirely by Nginx.
+</p>
+
+<p align="center">
+  <a href="https://github.com/izissise/nginx-explorer/actions/workflows/test.yml"><img alt="Tests" src="https://github.com/izissise/nginx-explorer/actions/workflows/test.yml/badge.svg"/></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"/></a>
+  <a href="https://github.com/izissise/nginx-explorer/commits/master"><img alt="Last commit" src="https://img.shields.io/github/last-commit/izissise/nginx-explorer"/></a>
+  <a href="https://github.com/izissise/nginx-explorer/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/izissise/nginx-explorer?style=social"/></a>
+  <img alt="Backend" src="https://img.shields.io/badge/backend-nginx-009639?logo=nginx&logoColor=white"/>
+  <img alt="Frontend" src="https://img.shields.io/badge/frontend-vanilla%20JS-f7df1e?logo=javascript&logoColor=black"/>
+</p>
+
+---
 
 ![example](https://raw.github.com/izissise/nginx-explorer/master/images/example.png "Example")
-
-[![Tests](https://github.com/izissise/nginx-explorer/actions/workflows/test.yml/badge.svg)](https://github.com/izissise/nginx-explorer/actions/workflows/test.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Why nginx-explorer?
 
@@ -22,7 +34,7 @@ Most self-hosted file managers require a Python, Node, or PHP backend. nginx-exp
 
 ## Quick start
 
-Serve the current directory on port 8080 (LAN clients get anonymous access):
+Serve the current directory on port 8080:
 
 ```bash
 git clone https://github.com/izissise/nginx-explorer.git
@@ -34,13 +46,26 @@ Requires: Docker or Podman.
 
 ## How it works
 
-Nginx's built-in `autoindex` generates the directory listing HTML. nginx-explorer injects itself into that HTML via `sub_filter`, replacing the `<html>` tag with a `<script>` tag that bootstraps the JS UI. No server-side templating, no dynamic code path.
+Nginx's built-in `autoindex` generates the directory listing HTML. nginx-explorer injects itself into that HTML via `sub_filter`, replacing the `<html>` tag with a `<script>` tag that bootstraps the JS UI. No server-side templating, no dynamic code path — the same standard Nginx that serves static files powers the entire application.
 
 Authentication is handled entirely through Nginx maps:
 
-1. A `POST /___ngxp/login` endpoint validates HTTP Basic Auth credentials (bcrypt-5, rate-limited)
+1. A `POST /___ngxp/login` endpoint validates HTTP Basic Auth credentials (bcrypt-5, rate-limited to 1 req/min per IP)
 2. On success, Nginx sets a cookie containing `user|secret|allowed_paths`
-3. Subsequent requests are validated by matching the cookie against `accessuri.map` using regex maps
+3. Subsequent requests are validated by matching the cookie's secret against `accessuri.map` using regex maps — no session store, no database
+
+## Scripts (`ngxp.sh`)
+
+`ngxp.sh` is the single entry point for all local operations:
+
+| Command | Description |
+|---------|-------------|
+| `download_icons` | Downloads the KDE Breeze icon pack (32×32 SVGs) into `icons/`. Run once before first use. Skips if already present. |
+| `servethis` | Adds a `lan_anon` user with access to `/`, then starts an Nginx container serving `$PWD` on port 8080. LAN clients browse without a login prompt. |
+| `dev` | Starts a dev server with several pre-created test users (`root`, `sub`, `upload`, `xx`) and mounts `~/Downloads`. Useful for iterating on the UI. |
+| `user_add <htpasswd> <accessmap> <user> <pass> <path...>` | Atomically creates or replaces a user in both `basic.htpasswd` (bcrypt-5 hash) and `accessuri.map` (random 128-char hex secret). Accepts multiple paths. |
+| `upload_fixup <upload_dir>` | Scans `upload_dir` for chunk metadata files (identified by the `#ngxpupload_meta` magic prefix), validates chunk sizes, concatenates them into the original file, and removes the temporary chunks. |
+| `test` | Downloads BATS and its assertion libraries on first run, then runs all `test/*.bats` integration test files in parallel Nginx containers. |
 
 ## Configuration
 
@@ -64,7 +89,7 @@ Each line maps a username to its secret token and allowed paths:
 alice alice|<secret>|/photos|/documents;
 ```
 
-The secret is generated automatically by `user_add`. Users cannot forge cookies without knowing it.
+The secret is generated automatically by `user_add`. Users cannot forge cookies without knowing it. You can grant a user access to multiple disjoint trees by listing multiple paths.
 
 ### Default paths
 
@@ -76,9 +101,11 @@ The secret is generated automatically by `user_add`. Users cannot forge cookies 
 | User access map | `/opt/ngxp/accessuri.map` |
 | Passwords file | `/opt/ngxp/basic.htpasswd` |
 
-### LAN vs WAN access
+## LAN vs WAN access
 
-Clients on RFC-1918 ranges (`192.168.x.x`, `10.x.x.x`) and loopback are automatically classified as `lan_anon` and bypass login. WAN clients must authenticate. This is controlled by the `geo` block in `nginx-explorer.conf`.
+Clients on RFC-1918 ranges (`192.168.x.x`, `10.x.x.x`) and loopback are classified as `lan_anon` by Nginx's `geo` block; all other clients are classified as `wan_anon`. These are treated as regular usernames looked up in `accessuri.map`.
+
+**If `lan_anon` or `wan_anon` are not present in `accessuri.map`, anonymous access is blocked by default** — the path check fails and Nginx returns 401. The `servethis` command automatically adds `lan_anon` with access to `/`. For a fully private setup (login required from everywhere), simply don't add either entry.
 
 ## Uploads
 
@@ -88,7 +115,7 @@ Files are uploaded in 256 MB chunks and stored as temporary files. To reassemble
 ./ngxp.sh upload_fixup /path/to/uploads/
 ```
 
-A metadata file (prefixed `#ngxpupload_meta`) is generated alongside the chunks, containing the original filename, chunk count, sizes, and file numbers needed for reconstruction.
+A metadata file (prefixed `#ngxpupload_meta`) is created alongside the chunks, recording the original filename, chunk count, sizes, and file numbers needed for reconstruction. The upload endpoint can be removed entirely from `nginx-explorer.conf` to disable uploads.
 
 ## Development
 
@@ -114,6 +141,14 @@ Frontend unit tests (QUnit) are available at `http://localhost:8080/___ngxp/quni
 ## Embedding in an existing Nginx setup
 
 Copy the relevant `location` blocks from `nginx-explorer.conf` into your server config. The `___ngxp` prefix is reserved for all app routes to avoid colliding with directory names. If you have a directory literally named `___ngxp`, it will not be listable.
+
+## Blog posts
+
+Three in-depth posts covering how nginx-explorer works internally:
+
+- [Nginx Explorer — File Listing](https://blog.izissise.net/posts/ngxp-listing/) — Build a file-sharing interface using Nginx's `autoindex` and `sub_filter` for CSS/JS injection.
+- [Nginx Explorer — Cookie Authentication](https://blog.izissise.net/posts/ngxp-cookie-auth/) — Implement per-user, per-path cookie authentication using only Nginx `map` directives.
+- [Nginx Explorer — Upload](https://blog.izissise.net/posts/ngxp-upload/) — Enable large file uploads via chunked JS uploads and server-side Bash reassembly.
 
 ## License
 
