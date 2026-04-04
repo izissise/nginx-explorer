@@ -1,0 +1,19 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download icons
+        run: ./ngxp.sh download_icons
+
+      - name: Run integration tests
+        run: ./ngxp.sh test
