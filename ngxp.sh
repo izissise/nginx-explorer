@@ -5,9 +5,9 @@ set -eu
 CWD=$(cd "${0%/*}" && pwd)
 
 test() {
-    local bats_version="1.11.1"
+    local bats_version="1.13.0"
     local bats_support_version="0.3.0"
-    local bats_assert_version="2.1.0"
+    local bats_assert_version="2.2.4"
     mkdir -p "$CWD"/test/bats/{bats-assert,bats-support}
     if [ ! -f "$CWD"/test/bats/bin/bats ]; then
         curl -f -s -L "https://github.com/bats-core/bats-assert/archive/v${bats_support_version}.tar.gz" -o - \
@@ -22,7 +22,7 @@ test() {
 }
 
 download_icons() {
-    breeze_icon_version=6.7.0
+    breeze_icon_version=6.24.0
     if [ ! -d "${CWD}/icons" ]; then
         echo 'Downloading icons'
         mkdir "${CWD}/icons"
