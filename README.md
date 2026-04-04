@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/logo.svg" alt="nginx-explorer" width="260"/>
+  <img src="logo.svg" alt="nginx-explorer" width="260"/>
 </p>
 
 <p align="center">
@@ -16,8 +16,6 @@
 </p>
 
 ---
-
-![example](https://raw.github.com/izissise/nginx-explorer/master/images/example.png "Example")
 
 ## Why nginx-explorer?
 
@@ -44,6 +42,47 @@ nginx-explorer/ngxp.sh servethis
 
 Requires: Docker or Podman.
 
+## Docker / Podman deployment
+
+`ngxp.sh servethis` is a convenience wrapper. For a permanent or customised deployment, use the container directly.
+Add `--userns=keep-id` when using **Podman** to map the container UID to your host user.
+
+```bash
+NGXP=/path/to/nginx-explorer   # repo checkout
+FILES=/path/to/your/files
+UPLOADS=/path/to/upload/destination
+
+docker run --rm -it \
+  --user="$(id -u):$(id -g)" \
+  --cap-drop=ALL \
+  --tmpfs=/tmp:rw,noexec,nosuid,size=70m \
+  -p 8080:8080 \
+  -v "$FILES:/home/user/downloads:ro" \
+  -v "$UPLOADS:/home/user/uploads:rw" \
+  -v "$NGXP/docker_nginx.conf:/etc/nginx/nginx.conf:ro" \
+  -v "$NGXP/nginx-explorer.conf:/etc/nginx/conf.d/default.conf:ro" \
+  -v "$NGXP/icons:/var/www/ngxp/icons:ro" \
+  -v "$NGXP/main.js:/var/www/ngxp/main.js:ro" \
+  -v "$NGXP/main.css:/var/www/ngxp/main.css:ro" \
+  -v "$NGXP/basic.htpasswd:/opt/ngxp/basic.htpasswd:ro" \
+  -v "$NGXP/accessuri.map:/opt/ngxp/accessuri.map:ro" \
+  nginx
+```
+
+### Volume map
+
+| Container path                   | Purpose                                 | Writable? |
+|----------------------------------|-----------------------------------------|-----------|
+| `/home/user/downloads`           | Files served for listing and download   | No        |
+| `/home/user/uploads`             | Destination for uploaded chunks         | **Yes**   |
+| `/var/www/ngxp/`                 | JS, CSS, icons (app assets)             | No        |
+| `/opt/ngxp/basic.htpasswd`       | User credentials                        | No        |
+| `/opt/ngxp/accessuri.map`        | User → paths mapping                    | No        |
+| `/etc/nginx/nginx.conf`          | Base Nginx config (`docker_nginx.conf`) | No        |
+| `/etc/nginx/conf.d/default.conf` | nginx-explorer Nginx config             | No        |
+
+The `--tmpfs=/tmp` mount is required — Nginx uses `/tmp` for upload buffering and its own internals. Without it the container will fail to start under `--cap-drop=ALL`.
+
 ## How it works
 
 Nginx's built-in `autoindex` generates the directory listing HTML. nginx-explorer injects itself into that HTML via `sub_filter`, replacing the `<html>` tag with a `<script>` tag that bootstraps the JS UI. No server-side templating, no dynamic code path — the same standard Nginx that serves static files powers the entire application.
@@ -58,14 +97,14 @@ Authentication is handled entirely through Nginx maps:
 
 `ngxp.sh` is the single entry point for all local operations:
 
-| Command | Description |
-|---------|-------------|
-| `download_icons` | Downloads the KDE Breeze icon pack (32×32 SVGs) into `icons/`. Run once before first use. Skips if already present. |
-| `servethis` | Adds a `lan_anon` user with access to `/`, then starts an Nginx container serving `$PWD` on port 8080. LAN clients browse without a login prompt. |
-| `dev` | Starts a dev server with several pre-created test users (`root`, `sub`, `upload`, `xx`) and mounts `~/Downloads`. Useful for iterating on the UI. |
-| `user_add <htpasswd> <accessmap> <user> <pass> <path...>` | Atomically creates or replaces a user in both `basic.htpasswd` (bcrypt-5 hash) and `accessuri.map` (random 128-char hex secret). Accepts multiple paths. |
-| `upload_fixup <upload_dir>` | Scans `upload_dir` for chunk metadata files (identified by the `#ngxpupload_meta` magic prefix), validates chunk sizes, concatenates them into the original file, and removes the temporary chunks. |
-| `test` | Downloads BATS and its assertion libraries on first run, then runs all `test/*.bats` integration test files in parallel Nginx containers. |
+| Command                                                   | Description                                                                                                                                                                                         |
+|-----------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `download_icons`                                          | Downloads the KDE Breeze icon pack (32×32 SVGs) into `icons/`. Run once before first use. Skips if already present.                                                                                 |
+| `servethis`                                               | Adds a `lan_anon` user with access to `/`, then starts an Nginx container serving `$PWD` on port 8080. LAN clients browse without a login prompt.                                                   |
+| `dev`                                                     | Starts a dev server with several pre-created test users (`root`, `sub`, `upload`, `xx`) and mounts `~/Downloads`. Useful for iterating on the UI.                                                   |
+| `user_add <htpasswd> <accessmap> <user> <pass> <path...>` | Atomically creates or replaces a user in both `basic.htpasswd` (bcrypt-5 hash) and `accessuri.map` (random 128-char hex secret). Accepts multiple paths.                                            |
+| `upload_fixup <upload_dir>`                               | Scans `upload_dir` for chunk metadata files (identified by the `#ngxpupload_meta` magic prefix), validates chunk sizes, concatenates them into the original file, and removes the temporary chunks. |
+| `test`                                                    | Downloads BATS and its assertion libraries on first run, then runs all `test/*.bats` integration test files in parallel Nginx containers.                                                            |
 
 ## Configuration
 
@@ -93,13 +132,13 @@ The secret is generated automatically by `user_add`. Users cannot forge cookies 
 
 ### Default paths
 
-| Path | Default |
-|------|---------|
-| Files (listing/download) | `/home/user/downloads` |
-| Upload destination | `/home/user/uploads/` |
-| App files (JS, CSS, icons) | `/var/www/ngxp/` |
-| User access map | `/opt/ngxp/accessuri.map` |
-| Passwords file | `/opt/ngxp/basic.htpasswd` |
+| Path                       | Default                    |
+|----------------------------|----------------------------|
+| Files (listing/download)   | `/home/user/downloads`     |
+| Upload destination         | `/home/user/uploads/`      |
+| App files (JS, CSS, icons) | `/var/www/ngxp/`           |
+| User access map            | `/opt/ngxp/accessuri.map`  |
+| Passwords file             | `/opt/ngxp/basic.htpasswd` |
 
 ## LAN vs WAN access
 
