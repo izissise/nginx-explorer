@@ -17,6 +17,8 @@
 
 ---
 
+![screenshot](https://github.com/user-attachments/assets/1cc7fcb0-d7f3-46ad-ab87-209bbc8aa8e4)
+
 ## Why nginx-explorer?
 
 Most self-hosted file managers require a Python, Node, or PHP backend. nginx-explorer needs **only Nginx**. The entire application is one `.js` file, one `.css` file, and an Nginx config — no build step, no `npm install`, no app server.
