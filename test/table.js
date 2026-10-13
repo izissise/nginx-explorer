@@ -1,6 +1,12 @@
+// The tests are in table_tests(), called once main.js is loaded: in a browser
+// by the bootstrap at the end of this file (qunit.html), without a browser by
+// test/qunit.bats (node)
+
 var g_this_script = 'inside_test';
-window.dyn_scripts[document.currentScript.src] = dynamic_script_load([base + 'main.js']).then(() => QUnit.module('table', function() {
-    QUnit.test('create', function(assert) {
+
+function table_tests() {
+    QUnit.module('table', function() {
+        QUnit.test('create', function(assert) {
             var t = table(["A", "B"], [
                 el('tr', {}, [el('td', { innerText: "1" }), el('td', { innerText: "2" })]),
                 el('tr', {}, [el('td', { innerText: "3" }), el('td', { innerText: "4" })]),
@@ -14,9 +20,9 @@ window.dyn_scripts[document.currentScript.src] = dynamic_script_load([base + 'ma
             assert.equal(tbody.childNodes[0].childNodes[1].innerText, "2");
             assert.equal(tbody.childNodes[1].childNodes[0].innerText, "3");
             assert.equal(tbody.childNodes[1].childNodes[1].innerText, "4");
-    });
+        });
 
-    QUnit.test('insert_accesses', function(assert) {
+        QUnit.test('insert_accesses', function(assert) {
             var a = insert_accesses(["/"], "/");
             assert.equal(a, true);
             var a = insert_accesses(["/aaaa"], "/aaaa");
@@ -33,5 +39,10 @@ window.dyn_scripts[document.currentScript.src] = dynamic_script_load([base + 'ma
             assert.equal(false, a);
             var a = insert_accesses(["/a", "/b/c"], "/");
             assert.equal('/a\n/b/c\n', a.innerText);
+        });
     });
-}));
+}
+
+if (typeof window !== 'undefined') {
+    window.dyn_scripts[document.currentScript.src] = dynamic_script_load([base + 'main.js']).then(table_tests);
+}

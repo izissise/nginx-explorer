@@ -584,8 +584,8 @@ function up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno) {
     fixupcmd += ' && stats=$(stat -c "%n %s" "$h" "${chk_fileno[@]}" | sort | uniq -f1 -c)';
     fixupcmd += ' && stats=${stats% [0-9]*}  && stats=${stats// } && stats=${stats//$\'\\n\'}';
     fixupcmd += ' && expected="$(( chk_cnt - ( chk_lsz > 0 ) ))${chk_fileno[0]}${chk_sz}"';
-    fixupcmd += ' && if (( chk_lsz > 0 )); then; expected+="1${chk_fileno[-1]}${chk_lsz}"; fi';
-    fixupcmd += ' && { [ "$stats" = "${expected}1${h}" ] || { echo "$h meta invalid" >&2; break; }; }';
+    fixupcmd += ' && if (( chk_lsz > 0 )); then expected+="1${chk_fileno[-1]}${chk_lsz}"; fi';
+    fixupcmd += ' && { [ "$stats" = "${expected}1${h}" ] || { echo "$h meta invalid" >&2; continue; }; }';
     fixupcmd += ' && cat "${chk_fileno[@]}" > "$name" && rm -f "$h" "${chk_fileno[@]}"; done';
 
     var meta = "#ngxpupload_meta\n" + JSON.stringify({
@@ -631,6 +631,10 @@ function upload_form_start(ev) {
 }
 
 function upload_ngxp_file(f, ui_span, upload_func, upload_endpoint, upload_max_size) {
+    // upload_max_size comes from a script tag attribute, so it is a string:
+    // used as is, `seeker += chsz` below concatenates instead of adding, the
+    // second chunk is then the whole remainder of the file and the next ones are empty
+    upload_max_size = Number(upload_max_size) || 0;
     var chunk_cnt = 1;
     var chunk_size = f.size;
     var chunk_last_size = 0;
@@ -644,6 +648,18 @@ function upload_ngxp_file(f, ui_span, upload_func, upload_endpoint, upload_max_s
         }
         console.log('Chunked upload -> Filesize: {0} ChunkCnt: {1} ChunkSz: {2} ChunkLastSz: {3} upload_max_size: {4}'.format(f.size, chunk_cnt, chunk_size, chunk_last_size, upload_max_size));
     }
+
+    // the server answers each chunk with the number of the file it stored it in,
+    // anything else (eg a proxy answering 200 with its own page) fails the upload
+    var up_fileno = ([xhr, [ui_span, chunk_fileno]]) => {
+        if (xhr !== null) {
+            if (!/^[0-9]+$/.test(xhr.responseText)) {
+                return Promise.reject([xhr, [ui_span, chunk_fileno]]);
+            }
+            chunk_fileno.push(xhr.responseText);
+        }
+        return [xhr, [ui_span, chunk_fileno]];
+    };
 
     //start real upload
     var seeker = 0;
@@ -660,10 +676,7 @@ function upload_ngxp_file(f, ui_span, upload_func, upload_endpoint, upload_max_s
         }
         let chunk = f.slice(seeker, seeker + chsz);
         seeker += chsz;
-        promise_chain = promise_chain.then(([xhr, [ui_span, chunk_fileno]]) => {
-            if (xhr !== null) {
-                chunk_fileno.push(xhr.responseText);
-            }
+        promise_chain = promise_chain.then(up_fileno).then(([xhr, [ui_span, chunk_fileno]]) => {
             ui_span.children[1].innerText = chunk_txt;
             return upload_func(
                 upload_endpoint, chunk, up_progress, [ui_span, chunk_fileno]
@@ -671,10 +684,7 @@ function upload_ngxp_file(f, ui_span, upload_func, upload_endpoint, upload_max_s
         });
     }
     // finally upload meta file
-    return promise_chain.then(([xhr, [ui_span, chunk_fileno]]) => {
-        if (xhr !== null) {
-            chunk_fileno.push(xhr.responseText);
-        }
+    return promise_chain.then(up_fileno).then(([xhr, [ui_span, chunk_fileno]]) => {
         ui_span.children[1].innerText = '⏺';
         var meta = up_meta_info(f, chunk_cnt, chunk_size, chunk_last_size, chunk_fileno);
         return upload_func(

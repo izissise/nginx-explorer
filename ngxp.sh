@@ -10,7 +10,7 @@ test() {
     local bats_assert_version="2.2.4"
     mkdir -p "$CWD"/test/bats/{bats-assert,bats-support}
     if [ ! -f "$CWD"/test/bats/bin/bats ]; then
-        curl -f -s -L "https://github.com/bats-core/bats-assert/archive/v${bats_support_version}.tar.gz" -o - \
+        curl -f -s -L "https://github.com/bats-core/bats-support/archive/v${bats_support_version}.tar.gz" -o - \
             | tar --strip-components=1 -C "${CWD}/test/bats/bats-support" -xzf -
         curl -f -s -L "https://github.com/bats-core/bats-assert/archive/v${bats_assert_version}.tar.gz" -o - \
             | tar --strip-components=1 -C "${CWD}/test/bats/bats-assert" -xzf -
@@ -97,14 +97,21 @@ upload_fixup() {
         printf '%s\n' "$0 ${FUNCNAME[0]} upload_path"
         exit 1
     fi
-    find "$1" -type f | while read -r h; do
+    local h head name chk_cnt chk_sz chk_lsz chk_fileno stats expected failed=0
+    while read -r h; do
         if [ ! -f "$h" ]; then continue; fi                                                # file still exist
         read -r -n 16 head < "$h" || true                                                  # read first 16 bytes
         if [ "$head" != "#ngxpupload_meta" ]; then continue; fi                            # if marker value
         IFS='/' read -r name chk_cnt chk_sz chk_lsz < <(
             jq -Rr 'fromjson? | [(.name | sub("/";"_";"g")), (.chunk_cnt|tonumber), (.chunk_size|tonumber), (.chunk_last_size|tonumber)] | join("/")' "$h"
-        ) # extract json
+        ) || true # extract json (nothing when it is not valid)
         eval "chk_fileno=( $( jq -Rr --arg d "$1" 'fromjson? | .chunk_fileno[] | select(test("^[0-9]*$")) | "\($d)\(.)" | @sh' "$h" ) )"
+        # the meta is user input: sizes and counts are numbers, one listed file number per chunk, a usable name
+        if ! [[ "$chk_cnt" =~ ^[0-9]+$ && "$chk_sz" =~ ^[0-9]+$ && "$chk_lsz" =~ ^[0-9]+$ \
+                && "$chk_cnt" -gt 0 && "${#chk_fileno[@]}" -eq "$chk_cnt" \
+                && -n "$name" && "$name" != . && "$name" != .. ]]; then
+            echo "$h meta invalid" >&2; failed=1; continue
+        fi
         # shellcheck disable=SC2154 # from eval
         stats=$(stat -c '%n %s' "$h" "${chk_fileno[@]}" | sort | uniq -f1 -c)
         stats=${stats% [0-9]*}
@@ -114,10 +121,14 @@ upload_fixup() {
         if (( chk_lsz > 0 )); then
             expected+="1${chk_fileno[-1]}${chk_lsz}"
         fi
-        [ "$stats" = "${expected}1${h}" ] || { echo "$h meta invalid" >&2; break; }
+        # a broken upload (missing, truncated or empty chunks) is reported and left
+        # in place for inspection, the other uploads are still processed
+        [ "$stats" = "${expected}1${h}" ] || { echo "$h meta invalid" >&2; failed=1; continue; }
+        if [ -e "$name" ]; then name="${name}.${h##*/}"; fi # never overwrite (same name uploaded twice), suffix with the meta file number
         cat "${chk_fileno[@]}" > "$name"
         rm -f "$h" "${chk_fileno[@]}"
-    done
+    done < <(find "$1" -type f | sort) # file numbers increase with time: process uploads in order
+    return "$failed"
 }
 
 user_add() {

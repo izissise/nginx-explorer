@@ -10,6 +10,10 @@
   <script>
         QUnit.config.autostart = false;
 
+        // Plain text results on the console too (TAP), so the suite can run headless
+        // (eg `firefox --headless` with the devtools.console.stdout.content pref)
+        QUnit.reporters.tap.init(QUnit);
+
         var tests = [
             'table.js',
             'upload.js',

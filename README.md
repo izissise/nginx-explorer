@@ -105,7 +105,7 @@ Authentication is handled entirely through Nginx maps:
 | `servethis`                                               | Adds a `lan_anon` user with access to `/`, then starts an Nginx container serving `$PWD` on port 8080. LAN clients browse without a login prompt.                                                   |
 | `dev`                                                     | Starts a dev server with several pre-created test users (`root`, `sub`, `upload`, `xx`) and mounts `~/Downloads`. Useful for iterating on the UI.                                                   |
 | `user_add <htpasswd> <accessmap> <user> <pass> <path...>` | Atomically creates or replaces a user in both `basic.htpasswd` (bcrypt-5 hash) and `accessuri.map` (random 128-char hex secret). Accepts multiple paths.                                            |
-| `upload_fixup <upload_dir>`                               | Scans `upload_dir` for chunk metadata files (identified by the `#ngxpupload_meta` magic prefix), validates chunk sizes, concatenates them into the original file, and removes the temporary chunks. |
+| `upload_fixup <upload_dir>`                               | Scans `upload_dir` for chunk metadata files (identified by the `#ngxpupload_meta` magic prefix), validates chunk sizes, concatenates them into the original file in the current directory, and removes the temporary chunks. An upload whose chunks do not match its metadata is reported, left in place, and makes the command exit non-zero; the other uploads are still processed. |
 | `test`                                                    | Downloads BATS and its assertion libraries on first run, then runs all `test/*.bats` integration test files in parallel Nginx containers.                                                            |
 
 ## Configuration
@@ -150,7 +150,7 @@ Clients on RFC-1918 ranges (`192.168.x.x`, `10.x.x.x`) and loopback are classifi
 
 ## Uploads
 
-Files are uploaded in 256 MB chunks and stored as temporary files. To reassemble them into the original file, run:
+Files bigger than the `upload-max-size` advertised in `nginx-explorer.conf` (200 MiB) are uploaded in chunks of that size, each stored as a temporary file. Every chunk must fit under Nginx's `client_max_body_size` (256 MiB in the same file), so keep the two in sync when changing them. To reassemble the chunks into the original file, run:
 
 ```bash
 ./ngxp.sh upload_fixup /path/to/uploads/
