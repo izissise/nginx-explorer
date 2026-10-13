@@ -137,15 +137,15 @@ conf_upload_max_size() { # -> bytes, as advertised to the JS client in the html 
 
 # --- tests ----------------------------------------------------------------
 
-@test "config: advertised upload-max-size fits under client_max_body_size" {
+@test "config: advertised upload-max-size is client_max_body_size minus 20 MiB" {
     # The client chunks at upload-max-size, nginx rejects bodies above
-    # client_max_body_size: the first must never exceed the second.
+    # client_max_body_size. Nginx cannot compute one from the other, so the html
+    # header hardcodes the cap minus a 20 MiB margin: this keeps the two in step.
     local adv max
     adv=$(conf_upload_max_size)
     max=$(conf_client_max_body_size)
-    [ "$adv" -gt 0 ]
     [ "$max" -gt 0 ]
-    [ "$adv" -le "$max" ]
+    [ "$adv" -eq $(( max - 20 * 1024 * 1024 )) ]
 }
 
 @test "server: a body above client_max_body_size is rejected with 413" {

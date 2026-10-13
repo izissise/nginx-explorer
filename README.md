@@ -150,7 +150,7 @@ Clients on RFC-1918 ranges (`192.168.x.x`, `10.x.x.x`) and loopback are classifi
 
 ## Uploads
 
-Files bigger than the `upload-max-size` advertised in `nginx-explorer.conf` (200 MiB) are uploaded in chunks of that size, each stored as a temporary file. Every chunk must fit under Nginx's `client_max_body_size` (256 MiB in the same file), so keep the two in sync when changing them. To reassemble the chunks into the original file, run:
+Files are uploaded in chunks of `upload-max-size` bytes, advertised in the html header built in `nginx-explorer.conf`, each chunk stored as a temporary file. That size is the `client_max_body_size` of the upload location minus a 20 MiB margin (256 MiB - 20 MiB = 236 MiB). Nginx cannot compute one from the other, so change both when changing the limit: `./ngxp.sh test` fails otherwise. To reassemble the chunks into the original file, run:
 
 ```bash
 ./ngxp.sh upload_fixup /path/to/uploads/
